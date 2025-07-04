@@ -1,0 +1,9 @@
+| enum_name    | enum_value | sort_order |
+| ------------ | ---------- | ---------- |
+| grade_level  | first      | 1          |
+| grade_level  | second     | 2          |
+| grade_level  | third      | 3          |
+| section_type | general    | 1          |
+| section_type | statistics | 2          |
+| section_type | science    | 3          |
+| section_type | arts       | 4          |

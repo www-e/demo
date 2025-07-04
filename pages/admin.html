@@ -1,0 +1,210 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Admin Dashboard - لوحة التحكم</title>
+    <!-- Dependencies from schedule-admin page for new navbar/footer -->
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.rtl.min.css">
+    <link rel="stylesheet" href="../css/styles.css">
+    <link rel="stylesheet" href="../css/schedule-admin.css">
+    <link rel="stylesheet" href="../css/student-modal-admin-page.css">
+
+    <!-- Original dependencies for the page content -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="icon" type="image/png" sizes="16x16" href="../assets/icons8-study-undefined-16.png">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.1.1/css/all.min.css">
+    <link href="https://fonts.googleapis.com/css2?family=Cairo:wght@400;600;700&display=swap" rel="stylesheet">
+    <style>
+        body { font-family: 'Cairo', sans-serif; background-color: #f8f9fa; }
+        .filter-card.active {
+            transform: translateY(-5px);
+            box-shadow: 0 10px 15px -3px rgb(0 0 0 / 0.1), 0 4px 6px -4px rgb(0 0 0 / 0.1);
+            border-color: #7c3aed; /* Violet border for active grade */
+        }
+        .admin-container {
+            max-width: 1400px;
+            margin: 2rem auto 4rem;
+            padding: 0 1rem;
+        }
+        /* Style for pagination buttons */
+        .pagination-btn {
+            padding: 0.5rem 0.75rem;
+            border-radius: 0.375rem;
+            font-size: 0.875rem;
+            font-weight: 500;
+            transition: all 0.2s;
+            border: 1px solid #d1d5db;
+        }
+        .pagination-btn.active {
+            background-color: var(--primary);
+            color: white;
+            cursor: default;
+            border-color: var(--primary);
+        }
+        .pagination-btn:disabled {
+            background-color: #e5e7eb;
+            color: #9ca3af;
+            cursor: not-allowed;
+        }
+        .btn-action.delete {
+            background-color: var(--error-bg);
+            color: var(--error-color);
+        }
+        .btn-action.delete:hover {
+            background-color: var(--error-color);
+            color: white;
+        }
+    </style>
+</head>
+<body class="text-gray-800">
+
+    <!-- Page Loader HTML -->
+    <div id="page-loader"><div class="loader-spinner"></div></div>
+
+    <header class="app-bar">
+        <div class="container d-flex justify-content-between align-items-center">
+            <div class="app-bar-brand">
+                <img src="../assets/mohandes.png" alt="Teacher Photo" class="brand-image">
+                <span class="brand-text-desktop">لوحة تحكم المهندس في الفيزياء</span>
+                <span class="brand-text-mobile">لوحة التحكم</span>
+            </div>
+            <nav class="app-bar-nav">
+                <a href="admin.html" class="nav-link-item active"><i class="fas fa-users"></i> <span>بيانات الطلاب</span></a>
+                <a href="schedule-admin.html" class="nav-link-item"><i class="fas fa-calendar-alt"></i> <span>إدارة المواعيد</span></a>
+            </nav>
+        </div>
+    </header>
+
+    <!-- START: Main Content Wrapper for Sticky Footer -->
+    <main class="flex-grow-1">
+        <div class="admin-container">
+            <div class="container mx-auto p-4 md:p-0">
+                <!-- Grade Filter Cards -->
+                <section id="stats-section" class="mb-6">
+                    <div class="grid grid-cols-2 sm:grid-cols-4 gap-4">
+                        <!-- Grade filter cards will be injected by JS -->
+                    </div>
+                </section>
+
+                <!-- Dynamic Secondary Filter Area (Hidden by default) -->
+                <section id="secondary-filter-section" class="mb-6 hidden">
+                    <div class="bg-white rounded-xl shadow-sm p-4 flex flex-col md:flex-row gap-4 items-center">
+                        <!-- Group Filter Dropdown -->
+                        <div class="w-full md:w-1/2">
+                            <label for="group-filter" class="block text-sm font-medium text-gray-700 mb-1">فلترة حسب المجموعة والموعد</label>
+                            <select id="group-filter" class="w-full p-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-violet-500">
+                                <!-- Options will be injected by JS -->
+                            </select>
+                        </div>
+                        <!-- Group Student Count Card -->
+                        <div class="w-full md:w-1/2 bg-violet-50 p-4 rounded-lg flex items-center justify-between">
+                            <div>
+                                <p class="text-gray-500 text-sm">طلاب المجموعة المحددة</p>
+                                <p id="group-student-count" class="text-3xl font-bold text-violet-700">0</p>
+                            </div>
+                            <div class="text-violet-500"><i class="fas fa-users-viewfinder fa-2x"></i></div>
+                        </div>
+                    </div>
+                </section>
+
+                <!-- Students Table Section -->
+                <section id="students-section">
+                    <div class="flex flex-col md:flex-row justify-content-between items-center mb-4 gap-4">
+                        <h2 class="text-xl font-semibold text-gray-700">قائمة الطلاب (<span id="total-students-count">0</span>)</h2>
+                        <div class="relative w-full md:w-auto md:max-w-sm">
+                            <input type="text" id="search-input" placeholder="ابحث بالاسم أو رقم الهاتف..." class="w-full p-2 pr-10 border border-gray-300 rounded-lg focus:ring-2 focus:ring-violet-500">
+                            <i class="fas fa-search absolute top-1/2 right-3 -translate-y-1/2 text-gray-400"></i>
+                        </div>
+                    </div>
+                    <div class="bg-white rounded-xl shadow-sm overflow-x-auto">
+                        <table class="w-full text-right">
+                            <thead class="bg-gray-50">
+                                <tr>
+                                    <th class="p-3 font-semibold text-xs text-gray-500 uppercase tracking-wider text-center">#</th>
+                                    <th class="p-3 font-semibold text-xs text-gray-500 uppercase tracking-wider">اسم الطالب</th>
+                                    <th class="p-3 font-semibold text-xs text-gray-500 uppercase tracking-wider">الصف</th>
+                                    <th class="p-3 font-semibold text-xs text-gray-500 uppercase tracking-wider">المجموعة والموعد</th>
+                                    <th class="p-3 font-semibold text-xs text-gray-500 uppercase tracking-wider text-left">رقم الطالب</th>
+                                    <th class="p-3 font-semibold text-xs text-gray-500 uppercase tracking-wider text-left">رقم ولي الأمر</th>
+                                    <th class="p-3 font-semibold text-xs text-gray-500 uppercase tracking-wider">تاريخ التسجيل</th>
+                                    <th class="p-3 font-semibold text-xs text-gray-500 uppercase tracking-wider text-center">إجراءات</th>
+                                </tr>
+                            </thead>
+                            <tbody id="students-table-body">
+                                <tr>
+                                    <td colspan="8" class="p-8 text-center text-gray-400"><i class="fas fa-spinner fa-spin mr-2"></i> جاري تحميل البيانات...</td>
+                                </tr>
+                            </tbody>
+                        </table>
+                    </div>
+                    <!-- NEW: Pagination Controls Container -->
+                    <div id="pagination-controls" class="flex justify-center items-center mt-6 space-x-2 space-x-reverse">
+                        <!-- Pagination buttons will be injected by JS here -->
+                    </div>
+                </section>
+            </div>
+        </div>
+    </main>
+    <!-- END: Main Content Wrapper -->
+    
+    <!-- Student Details Modal -->
+    <div class="modal fade" id="studentDetailModal" tabindex="-1" aria-labelledby="studentDetailModalLabel" aria-hidden="true">
+        <div class="modal-dialog modal-dialog-centered modal-lg">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <!-- Header content injected by JS -->
+                </div>
+                <div class="modal-body" id="modal-body-content">
+                    <!-- Body content injected by JS -->
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">إغلاق</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- NEW: Delete Confirmation Modal -->
+    <div class="modal fade" id="deleteConfirmationModal" tabindex="-1" aria-labelledby="deleteConfirmationModalLabel" aria-hidden="true">
+        <div class="modal-dialog modal-dialog-centered">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title" id="deleteModalTitle">تأكيد الحذف</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                </div>
+                <div class="modal-body">
+                    <p id="deleteModalBody"></p>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">إلغاء</button>
+                    <button type="button" class="btn btn-danger" id="confirmDeleteBtn">نعم، حذف</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Toast Container for Notifications -->
+    <div id="toastContainer" class="toast-container position-fixed bottom-0 end-0 p-3" style="z-index: 1100;"></div>
+    
+    <!-- START: New Modern Footer -->
+    <footer class="app-footer">
+        <div class="container">
+            <span>© 2025 لوحة تحكم المهندس في الفيزياء. جميع الحقوق محفوظة.</span>
+            <span class="developer-credit">
+                تصميم وتطوير
+                <a href="https://wa.me/201154688628" target="_blank" class="developer-link">
+                    <i class="fas fa-code"></i>
+                    <span>Omar Ashraf</span>
+                </a>
+            </span>
+        </div>
+    </footer>
+    <!-- END: New Modern Footer -->
+
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+    <script src="../js/admin.js" type="module" data-versioned></script>
+    <script src="../js/versioner.js"></script>
+</body>
+</html>

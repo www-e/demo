@@ -1,0 +1,155 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>إدارة المواعيد</title>
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.rtl.min.css">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
+    <link rel="icon" type="image/png" sizes="16x16" href="../assets/icons8-study-undefined-16.png">
+    <link href="https://fonts.googleapis.com/css2?family=Cairo:wght@400;600;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="../css/styles.css">
+    <link rel="stylesheet" href="../css/schedule-admin.css">
+</head>
+<body>
+
+    <!-- Page Loader HTML -->
+    <div id="page-loader"><div class="loader-spinner"></div></div>
+
+    <header class="app-bar">
+        <div class="container d-flex justify-content-between align-items-center">
+            <div class="app-bar-brand">
+                <img src="../assets/mohandes.png" alt="Teacher Photo" class="brand-image">
+                <span class="brand-text-desktop">لوحة تحكم المهندس في الفيزياء</span>
+                <span class="brand-text-mobile">لوحة التحكم</span>
+            </div>
+            <nav class="app-bar-nav">
+                <a href="admin.html" class="nav-link-item"><i class="fas fa-users"></i> <span>بيانات الطلاب</span></a>
+                <a href="schedule-admin.html" class="nav-link-item active"><i class="fas fa-calendar-alt"></i> <span>إدارة المواعيد</span></a>
+            </nav>
+        </div>
+    </header>
+
+    <!-- START: Main Content Wrapper for Sticky Footer -->
+    <main class="flex-grow-1">
+        <div class="admin-container">
+            <div class="admin-header">
+                <h1><i class="fas fa-calendar-plus"></i> إدارة المجموعات والمواعيد</h1>
+            </div>
+
+            <div class="form-card" id="formCard">
+                <h2 id="formTitle">إضافة مجموعة جديدة</h2>
+                <form id="scheduleForm">
+                    <input type="hidden" id="scheduleId">
+                    <div class="row">
+                        <div class="col-md-6 col-lg-4">
+                            <div class="form-group">
+                                <label for="grade">الصف الدراسي</label>
+                                <select id="grade" class="form-select" required></select>
+                            </div>
+                        </div>
+                        <div class="col-md-12 col-lg-4">
+                            <div class="form-group">
+                                <label for="group_name_select">اسم المجموعة (الأيام)</label>
+                                <select id="group_name_select" class="form-select"></select>
+                                <input type="text" id="group_name_custom" class="form-control mt-2" placeholder="أدخل اسم المجموعة المخصص" style="display: none;">
+                            </div>
+                        </div>
+                    </div>
+                    <div class="form-group">
+                        <label>إضافة المواعيد</label>
+                        <div class="time-builder">
+                            <select id="time_hour" class="form-select"></select>
+                            <select id="time_minute" class="form-select"></select>
+                            <select id="time_period" class="form-select"></select>
+                            <div class="time-preview" id="timePreview">--:--</div>
+                            <button type="button" id="addTimeBtn" class="btn btn-outline-primary"><i class="fas fa-plus"></i> إضافة وقت</button>
+                        </div>
+                        <div id="timePillsContainer" class="time-pills-container mt-3"></div>
+                    </div>
+                    <div class="form-actions">
+                        <button type="submit" id="saveBtn" class="btn btn-primary btn-lg"><i class="fas fa-plus"></i> حفظ المجموعة</button>
+                        <button type="button" id="cancelBtn" class="btn btn-secondary btn-lg" style="display: none;">إلغاء التعديل</button>
+                    </div>
+                </form>
+            </div>
+            
+            <div class="filter-card">
+                 <div class="filter-controls">
+                    <div class="grade-filters" id="gradeFilters">
+                        <button class="filter-btn active" data-grade="all">الكل</button>
+                        <button class="filter-btn grade-first" data-grade="first">الصف الأول</button>
+                        <button class="filter-btn grade-second" data-grade="second">الصف الثاني</button>
+                        <button class="filter-btn grade-third" data-grade="third">الصف الثالث</button>
+                    </div>
+                    <div class="group-filter-container">
+                         <select id="groupFilter" class="form-select">
+                            <option value="all">كل المجموعات</option>
+                        </select>
+                    </div>
+                 </div>
+            </div>
+
+            <div class="table-card">
+                <h2>المجموعات الحالية</h2>
+                <div id="loader" class="text-center p-4"><div class="spinner-border text-primary" role="status"></div></div>
+                <div id="schedulesTableContainer" class="table-responsive">
+                    <table class="table table-hover d-none d-md-table">
+                        <thead>
+                            <tr>
+                                <th>#</th>
+                                <th>الصف</th>
+                                <!-- UPDATED: Merged column -->
+                                <th>المجموعة والموعد</th>
+                                <th>تاريخ الإضافة</th>
+                                <th>إجراءات</th>
+                            </tr>
+                        </thead>
+                        <tbody id="schedulesTableBody"></tbody>
+                    </table>
+                    <div id="mobileCardView" class="d-md-none"></div>
+                </div>
+            </div>
+        </div>
+    </main>
+    <!-- END: Main Content Wrapper -->
+
+    <div class="modal fade" id="confirmationModal" tabindex="-1" aria-hidden="true">
+        <div class="modal-dialog modal-dialog-centered">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title" id="confirmationModalTitle"></h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                </div>
+                <div class="modal-body"><p id="confirmationModalBody"></p></div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">إلغاء</button>
+                    <button type="button" class="btn" id="confirmActionBtn">تأكيد</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div id="toastContainer" class="toast-container position-fixed bottom-0 end-0 p-3"></div>
+    
+    <!-- START: New Modern Footer -->
+    <footer class="app-footer">
+        <div class="container">
+            <span>© 2025 لوحة تحكم المهندس في الفيزياء. جميع الحقوق محفوظة.</span>
+            <span class="developer-credit">
+                تصميم وتطوير
+                <a href="https://wa.me/201154688628" target="_blank" class="developer-link">
+                    <i class="fas fa-code"></i>
+                    <span>Omar Ashraf</span>
+                </a>
+            </span>
+        </div>
+    </footer>
+    <!-- END: New Modern Footer -->
+
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+    <script src="../js/pages/schedule-admin/main-admin.js" type="module" data-versioned></script>
+    <script src="../js/versioner.js"></script>
+</body>
+</html>

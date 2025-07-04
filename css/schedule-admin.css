@@ -1,0 +1,161 @@
+/* ==================================
+   GLOBAL & LAYOUT STYLES
+================================== */
+body { background-color: #f8f9fa; }
+.admin-container { max-width: 1400px; margin: 2rem auto 4rem; padding: 0 1rem; }
+.admin-header h1 { color: var(--primary); font-weight: var(--font-weight-bold); }
+
+/* ==================================
+   APP BAR & FOOTER
+================================== */
+.app-bar { background: white; padding: 0.75rem 1rem; box-shadow: var(--shadow-sm); border-bottom: 1px solid var(--border-color); position: sticky; top: 0; z-index: 1050; }
+.app-bar-brand { display: flex; align-items: center; gap: 0.75rem; font-size: var(--font-size-lg); font-weight: var(--font-weight-semibold); }
+.brand-image { width: 40px; height: 40px; border-radius: 50%; object-fit: cover; border: 2px solid var(--primary); }
+.app-bar-nav { display: flex; gap: 0.5rem; }
+.nav-link-item { color: var(--text-secondary); text-decoration: none; padding: 0.5rem 1rem; border-radius: var(--radius-full); transition: all 0.2s; font-weight: var(--font-weight-medium); display: flex; align-items: center; gap: 0.5rem; }
+.nav-link-item:hover { color: var(--primary); background-color: rgba(var(--primary-rgb), 0.1); }
+.nav-link-item.active { color: white; background-color: var(--primary); }
+.brand-text-mobile { display: none; }
+
+/* ==================================
+   CARDS, FORMS, & FILTERS
+================================== */
+.form-card, .table-card, .filter-card { background: var(--card-bg); border-radius: var(--radius-xl); padding: 2rem; box-shadow: var(--shadow-md); margin-bottom: 2rem; border: 1px solid var(--border-color); }
+.form-card h2, .table-card h2 { font-size: var(--font-size-2xl); margin-bottom: 1.5rem; padding-bottom: 1rem; border-bottom: 1px solid var(--border-color); }
+.form-actions { margin-top: 2rem; display: flex; justify-content: flex-end; gap: 0.75rem; }
+.filter-controls { display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 1rem; }
+.grade-filters { display: flex; gap: 0.5rem; background-color: var(--background); border-radius: var(--radius-full); padding: 0.5rem; }
+.filter-btn { border: none; background: transparent; padding: 0.5rem 1.25rem; border-radius: var(--radius-full); font-weight: var(--font-weight-semibold); color: var(--text-secondary); transition: all 0.25s ease; }
+.filter-btn:hover { color: white !important; opacity: 0.8; }
+.filter-btn.active { color: rgb(0, 0, 0) !important; box-shadow: var(--shadow-sm); }
+.filter-btn.grade-first:hover, .filter-btn.grade-first.active { background-color: #3b82f6; }
+.filter-btn.grade-second:hover, .filter-btn.grade-second.active { background-color: #10b981; }
+.filter-btn.grade-third:hover, .filter-btn.grade-third.active { background-color: #f97316; }
+.group-filter-container { min-width: 250px; }
+
+/* ==================================
+   TIME BUILDER & PILLS
+================================== */
+.time-builder { display: grid; grid-template-columns: repeat(3, 1fr) 150px auto; gap: 0.75rem; align-items: center; }
+.time-preview { background-color: rgba(var(--primary-rgb), 0.05); border-radius: var(--radius-md); padding: 0.75rem 1rem; text-align: center; font-size: 1.5rem; font-weight: bold; color: var(--primary); direction: ltr; font-family: monospace; }
+#addTimeBtn:disabled { cursor: not-allowed; opacity: 0.6; }
+.time-pills-container { display: flex; flex-wrap: wrap; gap: 0.75rem; padding-top: 1rem; }
+.time-pill { background-color: var(--primary); color: white; padding: 0.5rem 1rem; border-radius: var(--radius-full); display: flex; align-items: center; gap: 0.5rem; font-weight: var(--font-weight-medium); direction: ltr; animation: scaleIn 0.3s ease; cursor: pointer; border: 2px solid transparent; transition: all 0.2s ease; }
+.time-pill.editing { background-color: var(--accent); border-color: var(--accent-dark); transform: scale(1.05); }
+.time-pill-remove { background: rgba(255,255,255,0.2); border: none; border-radius: 50%; width: 20px; height: 20px; display: inline-flex; align-items: center; justify-content: center; cursor: pointer; transition: background-color 0.2s; }
+.time-pill-remove:hover { background: rgba(255,255,255,0.4); }
+
+/* ==================================
+   TABLE & MOBILE CARD VIEW
+================================== */
+.table thead th { font-weight: var(--font-weight-semibold); }
+.action-buttons { display: flex; gap: 0.5rem; justify-content: flex-start; }
+.btn-action { display: inline-flex; align-items: center; justify-content: center; width: 38px; height: 38px; border-radius: 50%; border: none; transition: all 0.2s; }
+.btn-action.edit { background-color: var(--info-bg); color: var(--info-color); }
+.btn-action.edit:hover { background-color: var(--info-color); color: white; }
+.btn-action.delete { background-color: var(--error-bg); color: var(--error-color); }
+.btn-action.delete:hover { background-color: var(--error-color); color: white; }
+.badge.grade-first { background-color: #3b82f6 !important; }
+.badge.grade-second { background-color: #10b981 !important; }
+.badge.grade-third { background-color: #f97316 !important; }
+.time-tag { background-color: rgba(var(--primary-rgb), 0.1); color: var(--primary); padding: 0.25rem 0.75rem; border-radius: var(--radius-full); font-size: var(--font-size-sm); direction: ltr; }
+
+.mobile-card { background: white; border: 1px solid var(--border-color); border-left: 5px solid; border-radius: var(--radius-lg); padding: 1rem; margin-bottom: 1rem; box-shadow: var(--shadow-sm); }
+.mobile-card.grade-first { border-left-color: #3b82f6; }
+.mobile-card.grade-second { border-left-color: #10b981; }
+.mobile-card.grade-third { border-left-color: #f97316; }
+.card-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 1rem; }
+.card-header .group-name { font-size: 1.2rem; font-weight: bold; }
+.card-body-grid { display: grid; gap: 0.75rem; }
+.card-row { display: flex; justify-content: space-between; padding: 0.5rem 0; border-bottom: 1px solid #eee; }
+.card-row:last-child { border-bottom: none; }
+.card-label { color: var(--text-secondary); }
+.card-value { font-weight: 500; }
+.card-footer { margin-top: 1rem; }
+
+/* ==================================
+   TOASTS & RESPONSIVE OVERHAUL
+================================== */
+.toast-container { z-index: 1100; }
+.toast { box-shadow: var(--shadow-lg); border-radius: var(--radius-lg); border: none; }
+.toast-header { font-weight: var(--font-weight-bold); }
+.toast-header .btn-close-white { filter: invert(0) grayscale(100%) brightness(200%); }
+.toast.toast-success .toast-header { background-color: var(--success); color: white; }
+.toast.toast-error .toast-header { background-color: var(--error); color: white; }
+.toast.toast-delete .toast-header { background-color: var(--warning); color: black; }
+.toast.toast-delete .btn-close-white { filter: none; }
+
+@media (max-width: 767px) {
+    .brand-text-desktop { display: none; }
+    .brand-text-mobile { display: block; }
+    .nav-link-item span { display: none; }
+    .nav-link-item { padding: 0.75rem; }
+    .admin-container { padding: 0 0.5rem; margin-top: 1rem; }
+    .filter-controls, .grade-filters { flex-direction: column; align-items: stretch; }
+    .filter-btn { flex-grow: 1; text-align: center; }
+    .form-card, .table-card, .filter-card { padding: 1rem; }
+    .time-builder { grid-template-columns: 1fr 1fr; }
+    .time-builder .form-select, .time-builder .time-preview { grid-column: span 1; }
+    .time-builder #addTimeBtn { grid-column: span 2; width: 100%; margin-top: 0.5rem; }
+}
+
+/* === NEW STICKY FOOTER & MODERN STYLING === */
+body {
+    display: flex;
+    flex-direction: column;
+    min-height: 100vh;
+}
+main.flex-grow-1 {
+    flex-grow: 1; /* This makes the main content take up all available vertical space */
+}
+.app-footer {
+    background-color: #1a1a2e; /* Dark, modern color */
+    color: #a9a9d8;
+    padding: 1.5rem 1rem;
+    border-top: 3px solid var(--primary);
+    font-size: 0.9rem;
+    margin-top: auto; /* Pushes footer to bottom in flex layout */
+}
+.app-footer .container {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    flex-wrap: wrap;
+    gap: 1rem;
+}
+.developer-credit {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+}
+.developer-link {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.5rem;
+    background-color: rgba(255, 255, 255, 0.1);
+    color: white;
+    padding: 0.4rem 0.8rem;
+    border-radius: var(--radius-full);
+    text-decoration: none;
+    font-weight: 500;
+    transition: all 0.3s ease;
+}
+.developer-link i {
+    color: var(--accent);
+    transition: transform 0.3s ease;
+}
+.developer-link:hover {
+    background-color: var(--primary);
+    transform: translateY(-2px);
+    box-shadow: 0 4px 10px rgba(0,0,0,0.2);
+}
+.developer-link:hover i {
+    transform: rotate(12deg);
+}
+
+@media (max-width: 767px) {
+    .app-footer .container {
+        flex-direction: column;
+        text-align: center;
+    }
+}

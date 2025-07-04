@@ -1,0 +1,26 @@
+
+.tags-container {
+    display: flex;
+    flex-wrap: wrap;
+    gap: var(--space-sm);
+    margin: var(--space-base) 0;
+}
+.tag {
+    display: inline-flex;
+    align-items: center;
+    gap: var(--space-xs);
+    padding: var(--space-xs) var(--space-md);
+    background: rgba(var(--primary-rgb), 0.1);
+    color: var(--primary);
+    border-radius: var(--radius-full);
+    font-size: var(--font-size-sm);
+    font-weight: var(--font-weight-medium);
+    transition: var(--transition-all);
+    border: 1px solid rgba(var(--primary-rgb), 0.2);
+    user-select: none;
+}
+.tag:hover {
+    background: rgba(var(--primary-rgb), 0.15);
+    transform: translateY(-1px);
+    box-shadow: var(--shadow-sm);
+}
