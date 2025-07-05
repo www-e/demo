@@ -1,9 +1,11 @@
 // js/pages/schedule-admin/main-admin.js
 import { initializeUpdateModal } from '../../components/update-modal.js';
+import { TeacherModal } from '../../components/teacher-modal.js'; // ADDED: Import teacher modal
 import { elements } from './dom-elements.js';
 import { showToast, showConfirmation, showLoader, populateSelect } from './ui-helpers.js';
 import { createTimeBuilder } from './time-builder.js';
 import { createTableHandler } from './table-handler.js';
+import { fetchTeachers } from '../../services/teacher-service.js'; // ADDED: Import teacher service
 import * as ScheduleService from '../../services/schedule-service.js';
 
 // --- Page Loader Logic ---
@@ -22,7 +24,14 @@ document.addEventListener('DOMContentLoaded', () => {
 
     // --- State ---
     let allSchedules = [];
+    let allTeachers = []; // ADDED: Teachers state
     let isEditingGroup = null;
+
+    // ADDED: Teacher Modal
+    const teacherModal = new TeacherModal();
+    teacherModal.onSaved(() => {
+        loadTeachers();
+    });
 
     // --- Module Instances ---
     const timeBuilder = createTimeBuilder(elements);
@@ -32,7 +41,7 @@ document.addEventListener('DOMContentLoaded', () => {
     async function loadSchedules() {
         showLoader(elements.loader, elements.schedulesTableContainer, true);
         try {
-            allSchedules = await ScheduleService.fetchSchedules();
+            allSchedules = await ScheduleService.fetchSchedulesWithTeachers(); // CHANGED: Use teacher-aware fetch
             tableHandler.render(allSchedules);
             tableHandler.populateGroupFilter(allSchedules);
         } catch (error) {
@@ -40,6 +49,25 @@ document.addEventListener('DOMContentLoaded', () => {
         } finally {
             showLoader(elements.loader, elements.schedulesTableContainer, false);
         }
+    }
+
+    // ADDED: Load Teachers function
+    async function loadTeachers() {
+        try {
+            allTeachers = await fetchTeachers();
+            populateTeacherSelect();
+        } catch (error) {
+            showToast('خطأ في تحميل المدرسين: ' + error.message, 'error');
+        }
+    }
+
+    // ADDED: Populate teacher select
+    function populateTeacherSelect() {
+        const teacherOptions = [
+            { v: '', t: 'عام (متاح للجميع)' },
+            ...allTeachers.map(teacher => ({ v: teacher.id, t: teacher.name }))
+        ];
+        populateSelect(elements.teacherSelect, teacherOptions, 'اختر المدرس...');
     }
     
     function resetForm() {
@@ -60,13 +88,16 @@ document.addEventListener('DOMContentLoaded', () => {
             confirmText: 'نعم، ابدأ', btnClass: 'btn-info',
             onConfirm: () => {
                 isEditingGroup = dataset;
-                // 'section' is removed from the dataset destructuring
-                const { grade, group } = dataset;
-                // Filtering is now simpler, no longer checking for section
-                const groupSchedules = allSchedules.filter(s => s.grade === grade && s.group_name === group);
+                const { grade, group, teacher } = dataset;
+                const groupSchedules = allSchedules.filter(s => 
+                    s.grade === grade && 
+                    s.group_name === group && 
+                    (s.teacher_id === teacher || (!s.teacher_id && !teacher))
+                );
                 
                 elements.formTitle.textContent = `تعديل مجموعة: ${group}`;
                 elements.gradeSelect.value = grade;
+                elements.teacherSelect.value = teacher || ''; // ADDED: Set teacher value
                 
                 const standardGroup = Array.from(elements.groupNameSelect.options).find(opt => opt.value === group);
                 elements.groupNameSelect.value = standardGroup ? group : 'custom';
@@ -101,7 +132,11 @@ document.addEventListener('DOMContentLoaded', () => {
         e.preventDefault();
         const groupName = elements.groupNameSelect.value === 'custom' ? elements.groupNameCustomInput.value.trim() : elements.groupNameSelect.value;
         const timeSlots = timeBuilder.getTimes();
-        if (!elements.gradeSelect.value || !groupName || timeSlots.length === 0) return showToast('يرجى ملء جميع الحقول.', 'error');
+        const teacherId = elements.teacherSelect.value || null; // ADDED: Get teacher ID
+        
+        if (!elements.gradeSelect.value || !groupName || timeSlots.length === 0) {
+            return showToast('يرجى ملء جميع الحقول.', 'error');
+        }
 
         showConfirmation({
             modal: { instance: elements.confirmationModal, title: elements.confirmationModalTitle, body: elements.confirmationModalBody, confirmBtn: elements.confirmActionBtn },
@@ -109,36 +144,60 @@ document.addEventListener('DOMContentLoaded', () => {
             body: `هل أنت متأكد من حفظ مجموعة "${groupName}"؟`,
             confirmText: 'نعم، حفظ', btnClass: 'btn-primary',
             onConfirm: async () => {
-                // The records object is now simpler, it does not include 'section'
                 const records = timeSlots.map(time => ({ 
                     grade: elements.gradeSelect.value, 
                     group_name: groupName, 
-                    time_slot: time 
+                    time_slot: time,
+                    teacher_id: teacherId // ADDED: Include teacher_id
                 }));
+                
                 try {
-                    await ScheduleService.saveSchedule(records, !!isEditingGroup, isEditingGroup);
+                    // CHANGED: Use teacher-aware save function
+                    await ScheduleService.saveScheduleWithTeacher(records, !!isEditingGroup, isEditingGroup);
                     showToast(isEditingGroup ? 'تم تعديل المجموعة!' : 'تمت إضافة المجموعة!', 'success');
                     resetForm();
                     await loadSchedules();
-                } catch (error) { showToast(error.code === '23505' ? 'خطأ: أحد هذه المواعيد موجود بالفعل.' : 'حدث خطأ: ' + error.message, 'error'); }
+                } catch (error) { 
+                    showToast(error.code === '23505' ? 'خطأ: أحد هذه المواعيد موجود بالفعل.' : 'حدث خطأ: ' + error.message, 'error'); 
+                }
             }
         });
     }
 
+    // ADDED: Handle Add Teacher
+    function handleAddTeacher() {
+        teacherModal.show();
+    }
+
     // --- Initial Setup & Event Listeners ---
-    populateSelect(elements.gradeSelect, [ { v: 'first', t: 'الأول الثانوي'}, { v: 'second', t: 'الثاني الثانوي'}, { v: 'third', t: 'الثالث الثانوي'}], 'اختر الصف...');
-    populateSelect(elements.groupNameSelect, [ {v: "السبت و الثلاثاء", t: "السبت و الثلاثاء"}, {v: "الأحد و الأربعاء", t: "الأحد و الأربعاء"}, {v: "الاثنين و الخميس", t: "الاثنين و الخميس"}, {v: "السبت و الثلاثاء و الخميس", t: "السبت و الثلاثاء و الخميس"}, {v: "الأحد و الأربعاء و الجمعة", t: "الأحد و الأربعاء و الجمعة"}, {v: "custom", t: "أخرى"} ], "اختر أيام المجموعة...");
+    populateSelect(elements.gradeSelect, [ 
+        { v: 'first', t: 'الأول الثانوي'}, 
+        { v: 'second', t: 'الثاني الثانوي'}, 
+        { v: 'third', t: 'الثالث الثانوي'}
+    ], 'اختر الصف...');
+    
+    populateSelect(elements.groupNameSelect, [ 
+        {v: "السبت و الثلاثاء", t: "السبت و الثلاثاء"}, 
+        {v: "الأحد و الأربعاء", t: "الأحد و الأربعاء"}, 
+        {v: "الاثنين و الخميس", t: "الاثنين و الخميس"}, 
+        {v: "السبت و الثلاثاء و الخميس", t: "السبت و الثلاثاء و الخميس"}, 
+        {v: "الأحد و الأربعاء و الجمعة", t: "الأحد و الأربعاء و الجمعة"}, 
+        {v: "custom", t: "أخرى"} 
+    ], "اختر أيام المجموعة...");
     
     timeBuilder.setup();
     
-    // The 'handleGradeChange' event listener is no longer needed as there are no dependent fields.
-    elements.groupNameSelect.addEventListener('change', () => elements.groupNameCustomInput.style.display = (elements.groupNameSelect.value === 'custom') ? 'block' : 'none');
+    elements.groupNameSelect.addEventListener('change', () => {
+        elements.groupNameCustomInput.style.display = (elements.groupNameSelect.value === 'custom') ? 'block' : 'none';
+    });
+    
     elements.form.addEventListener('submit', handleSave);
     elements.cancelBtn.addEventListener('click', resetForm);
+    elements.addTeacherBtn.addEventListener('click', handleAddTeacher); // ADDED: Teacher button event
     
     elements.gradeFiltersContainer.addEventListener('click', (e) => tableHandler.handleGradeFilterClick(e, allSchedules));
     elements.groupFilterSelect.addEventListener('change', () => tableHandler.render(allSchedules));
     
-    // Initial data load
-    loadSchedules();
+    // CHANGED: Load both schedules and teachers
+    Promise.all([loadSchedules(), loadTeachers()]);
 });

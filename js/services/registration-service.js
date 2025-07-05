@@ -5,7 +5,14 @@ let allSchedules = []; // Cache for fetched schedules
 
 export async function loadSchedulesFromDB() {
     try {
-        const { data, error } = await supabase.from('schedules').select('*').eq('is_active', true);
+        // ADDED: Include teacher information in the query
+        const { data, error } = await supabase
+            .from('schedules')
+            .select(`
+                *,
+                teacher:teachers(id, name)
+            `)
+            .eq('is_active', true);
         if (error) throw error;
         allSchedules = data;
         return allSchedules;
@@ -15,9 +22,17 @@ export async function loadSchedulesFromDB() {
     }
 }
 
-export function getAvailableGroupTimes(grade) {
+// MODIFIED: Added teacherId parameter to filter schedules by teacher
+export function getAvailableGroupTimes(grade, teacherId = null) {
     if (!grade) return [];
-    const relevantSchedules = allSchedules.filter(s => s.grade === grade);
+    let relevantSchedules = allSchedules.filter(s => s.grade === grade);
+    
+    // ADDED: Filter by teacher if specified
+    if (teacherId && teacherId !== 'all') {
+        relevantSchedules = relevantSchedules.filter(schedule => 
+            schedule.teacher_id === teacherId || schedule.teacher_id === null
+        );
+    }
 
     relevantSchedules.sort((a, b) => {
         if (a.group_name < b.group_name) return -1;
@@ -51,7 +66,7 @@ async function checkExistingRegistration(phone, grade) {
     return count > 0;
 }
 
-// UPDATED: Now accepts a plain data object directly
+// UNCHANGED: Keeping your existing submitRegistration function exactly as is
 export async function submitRegistration(registrationData) {
     const exists = await checkExistingRegistration(registrationData.student_phone, registrationData.grade);
     if (exists) {

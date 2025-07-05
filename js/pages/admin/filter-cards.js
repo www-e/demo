@@ -7,7 +7,7 @@ export async function renderFilterCards() {
     const container = document.getElementById('stats-section').querySelector('.grid');
     
     try {
-        const counts = await getGradeCounts();
+        const counts = await getGradeCounts(currentFilter.teacher); // ADDED: Pass teacher filter
         
         const cardsData = [
             { grade: 'all', label: 'إجمالي الطلاب', count: counts.all, icon: 'fa-users', color: 'violet' },
@@ -62,17 +62,34 @@ export function updateGroupStudentCount() {
         return;
     }
     const [filterGroup, filterTime] = currentFilter.group.split('|');
-    const count = allStudents.filter(s => s.grade === currentFilter.grade && s.days_group === filterGroup && s.time_slot === filterTime).length;
-    countElement.textContent = count;
+    // ADDED: Include teacher filter in client-side count
+    let filteredStudents = allStudents.filter(s => 
+        s.grade === currentFilter.grade && 
+        s.days_group === filterGroup && 
+        s.time_slot === filterTime
+    );
+    
+    if (currentFilter.teacher !== 'all') {
+        filteredStudents = filteredStudents.filter(s => s.teacher_id === currentFilter.teacher);
+    }
+    
+    countElement.textContent = filteredStudents.length;
 }
 
 function renderFilterCardsClientSide() {
     const container = document.getElementById('stats-section').querySelector('.grid');
+    
+    // ADDED: Apply teacher filter to client-side counts
+    let studentsToCount = allStudents;
+    if (currentFilter.teacher !== 'all') {
+        studentsToCount = allStudents.filter(s => s.teacher_id === currentFilter.teacher);
+    }
+    
     const counts = { 
-        all: allStudents.length, 
-        first: allStudents.filter(s => s.grade === 'first').length, 
-        second: allStudents.filter(s => s.grade === 'second').length, 
-        third: allStudents.filter(s => s.grade === 'third').length, 
+        all: studentsToCount.length, 
+        first: studentsToCount.filter(s => s.grade === 'first').length, 
+        second: studentsToCount.filter(s => s.grade === 'second').length, 
+        third: studentsToCount.filter(s => s.grade === 'third').length, 
     };
     
     const cardsData = [

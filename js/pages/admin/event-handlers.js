@@ -27,6 +27,16 @@ export function setupEventListeners() {
         applyFilters();
     });
 
+    // ADDED: Teacher filter dropdown
+    const teacherFilter = document.getElementById('teacherFilter');
+    if (teacherFilter) {
+        teacherFilter.addEventListener('change', e => {
+            setCurrentFilter({ teacher: e.target.value });
+            setCurrentPage(1);
+            applyFilters();
+        });
+    }
+
     // NEW: Debounced search input (300ms delay)
     const debouncedSearch = debounce((searchQuery) => {
         setCurrentFilter({ searchQuery });

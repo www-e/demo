@@ -3,14 +3,23 @@ import { SUPABASE_URL, SUPABASE_ANON_KEY } from '../../config.js';
 
 export const supabase = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
 
-// NEW: Server-side data fetching with pagination
-export async function fetchStudents(page = 1, pageSize = 20, grade = 'all', group = 'all', searchQuery = '') {
+// Server-side data fetching with pagination and teacher filtering
+export async function fetchStudents(page = 1, pageSize = 20, grade = 'all', group = 'all', teacherId = 'all', searchQuery = '') {
     const offset = (page - 1) * pageSize;
-    let query = supabase.from('registrations_2025_2026').select('*');
+    let query = supabase
+        .from('registrations_2025_2026')
+        .select(`
+            *,
+            teacher:teachers(id, name)
+        `); // ADDED: Include teacher information
 
     // Apply filters on server-side
     if (grade !== 'all') {
         query = query.eq('grade', grade);
+    }
+    // ADDED: Teacher filtering
+    if (teacherId !== 'all') {
+        query = query.eq('teacher_id', teacherId);
     }
     if (group !== 'all') {
         const [filterGroup, filterTime] = group.split('|');
@@ -29,12 +38,16 @@ export async function fetchStudents(page = 1, pageSize = 20, grade = 'all', grou
     return data;
 }
 
-// NEW: Get total count for pagination
-export async function getStudentsCount(grade = 'all', group = 'all', searchQuery = '') {
+// Get total count for pagination with teacher filtering
+export async function getStudentsCount(grade = 'all', group = 'all', teacherId = 'all', searchQuery = '') {
     let query = supabase.from('registrations_2025_2026').select('*', { count: 'exact', head: true });
 
     if (grade !== 'all') {
         query = query.eq('grade', grade);
+    }
+    // ADDED: Teacher filtering in count
+    if (teacherId !== 'all') {
+        query = query.eq('teacher_id', teacherId);
     }
     if (group !== 'all') {
         const [filterGroup, filterTime] = group.split('|');
@@ -51,12 +64,18 @@ export async function getStudentsCount(grade = 'all', group = 'all', searchQuery
     return count;
 }
 
-// NEW: Get counts for filter cards
-export async function getGradeCounts() {
-    const { data, error } = await supabase
+// Get counts for filter cards with teacher filtering
+export async function getGradeCounts(teacherId = 'all') {
+    let query = supabase
         .from('registrations_2025_2026')
         .select('grade');
     
+    // ADDED: Teacher filtering in grade counts
+    if (teacherId !== 'all') {
+        query = query.eq('teacher_id', teacherId);
+    }
+    
+    const { data, error } = await query;
     if (error) throw error;
     
     const counts = { all: data.length, first: 0, second: 0, third: 0 };
@@ -68,3 +87,11 @@ export async function getGradeCounts() {
     
     return counts;
 }
+
+export async function deleteStudent(id) {
+    const { error } = await supabase.from('registrations_2025_2026').delete().eq('id', id);
+    if (error) throw error;
+}
+
+// REMOVE THIS LINE - it's causing the duplicate export error:
+// export { supabase };

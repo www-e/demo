@@ -48,6 +48,20 @@
                                 <select id="grade" class="form-select" required></select>
                             </div>
                         </div>
+                        <!-- ADDED: Teacher Selection -->
+                        <div class="col-md-6 col-lg-4">
+                            <div class="form-group">
+                                <label for="teacher">المدرس</label>
+                                <div class="d-flex gap-2">
+                                    <select id="teacher" class="form-select">
+                                        <option value="">عام (متاح للجميع)</option>
+                                    </select>
+                                    <button type="button" class="btn btn-outline-primary" id="addTeacherBtn" title="إضافة مدرس جديد">
+                                        <i class="fas fa-plus"></i>
+                                    </button>
+                                </div>
+                            </div>
+                        </div>
                         <div class="col-md-12 col-lg-4">
                             <div class="form-group">
                                 <label for="group_name_select">اسم المجموعة (الأيام)</label>
@@ -99,8 +113,8 @@
                             <tr>
                                 <th>#</th>
                                 <th>الصف</th>
-                                <!-- UPDATED: Merged column -->
                                 <th>المجموعة والموعد</th>
+                                <th>المدرس</th> <!-- ADDED: Teacher column -->
                                 <th>تاريخ الإضافة</th>
                                 <th>إجراءات</th>
                             </tr>

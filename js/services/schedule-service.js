@@ -10,6 +10,19 @@ export async function fetchSchedules() {
     return data;
 }
 
+// ADDED: New function to fetch schedules with teacher information
+export async function fetchSchedulesWithTeachers() {
+    const { data, error } = await supabase
+        .from('schedules')
+        .select(`
+            *,
+            teacher:teachers(id, name)
+        `)
+        .order('created_at', { ascending: false });
+    if (error) throw error;
+    return data;
+}
+
 export async function deleteScheduleById(id) {
     const { error } = await supabase.from('schedules').delete().eq('id', id);
     if (error) throw error;
@@ -33,6 +46,31 @@ export async function saveSchedule(records, isEditing, oldGroupData) {
     }
     
     // Insert the new or updated set of records.
+    const { error: insertError } = await supabase.from('schedules').insert(records);
+    if (insertError) throw insertError;
+}
+
+// ADDED: New function to save schedules with teacher support
+export async function saveScheduleWithTeacher(records, isEditing, oldGroupData) {
+    if (isEditing && oldGroupData) {
+        const { grade, group, teacher } = oldGroupData;
+        
+        let deleteQuery = supabase
+            .from('schedules')
+            .delete()
+            .eq('group_name', group)
+            .eq('grade', grade);
+            
+        if (teacher) {
+            deleteQuery = deleteQuery.eq('teacher_id', teacher);
+        } else {
+            deleteQuery = deleteQuery.is('teacher_id', null);
+        }
+
+        const { error: deleteError } = await deleteQuery;
+        if (deleteError) throw deleteError;
+    }
+    
     const { error: insertError } = await supabase.from('schedules').insert(records);
     if (insertError) throw insertError;
 }

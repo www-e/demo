@@ -1,6 +1,6 @@
-// js/state.js
+// js/pages/admin/state.js
 export let allStudents = [];
-export let currentFilter = { grade: 'all', group: 'all', searchQuery: '' };
+export let currentFilter = { grade: 'all', group: 'all', teacher: 'all', searchQuery: '' }; // ADDED: teacher: 'all'
 export let studentDetailModal;
 export let deleteConfirmationModal;
 export let currentPage = 1;

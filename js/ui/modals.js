@@ -96,6 +96,10 @@ export class SuccessModal {
                     <span class="receipt-label"><i class="fas fa-clock"></i> الموعد</span>
                     <span class="receipt-value time-name"></span>
                 </div>
+                <div class="receipt-data-row">
+                    <span class="receipt-label"><i class="fas fa-chalkboard-teacher"></i> المدرس</span>
+                    <span class="receipt-value teacher-name"></span>
+                </div>
             </div>
             <div class="confirmation-details" style="text-align: right; margin-top: 1.5rem; padding-top: 1rem; border-top: 1px solid var(--border-color);">
                 <h4 style="font-size: 1.2rem; color: var(--primary); margin-bottom: 0.75rem;"><i class="fas fa-exclamation-circle"></i> خطوة هامة لتأكيد الحجز</h4>
@@ -112,6 +116,7 @@ export class SuccessModal {
         this.modal.querySelector('.grade-name').textContent = data.gradeName || 'غير متوفر';
         this.modal.querySelector('.group-name').textContent = data.groupName || 'غير متوفر';
         this.modal.querySelector('.time-name').textContent = data.timeName || 'غير متوفر';
+        this.modal.querySelector('.teacher-name').textContent = data.teacherName || 'غير متوفر'; // ADDED: Teacher name
         this.modal.style.display = 'flex';
         setTimeout(() => this.modal.classList.add('active'), 10);
     }

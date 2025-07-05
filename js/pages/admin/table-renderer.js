@@ -6,7 +6,7 @@ import { convertTo12HourFormat, formatFullDate } from './helpers.js';
 export function renderTable(students) {
     const tableBody = document.getElementById('students-table-body');
     if (!students || students.length === 0) {
-        tableBody.innerHTML = `<tr><td colspan="8" class="p-8 text-center text-gray-400">لا يوجد طلاب يطابقون هذا البحث.</td></tr>`;
+        tableBody.innerHTML = `<tr><td colspan="9" class="p-8 text-center text-gray-400">لا يوجد طلاب يطابقون هذا البحث.</td></tr>`; // CHANGED: colspan from 8 to 9
         return;
     }
     tableBody.innerHTML = students.map((student, index) => {
@@ -23,6 +23,7 @@ export function renderTable(students) {
             <td class="p-3 font-semibold text-slate-800 cursor-pointer">${student.student_name}</td>
             <td class="p-3 text-slate-700 cursor-pointer">${GRADE_NAMES[student.grade] || ''}</td>
             <td class="p-3 text-slate-700 cursor-pointer">${groupTime}</td>
+            <td class="p-3 text-slate-700 cursor-pointer">${student.teacher?.name || 'عام'}</td>
             <td class="p-3 text-slate-700 text-left font-mono" dir="ltr">
                 <a href="https://wa.me/20${student.student_phone.substring(1)}" target="_blank" class="hover:underline text-green-600 font-semibold" onclick="event.stopPropagation();"><i class="fab fa-whatsapp"></i> ${student.student_phone}</a>
             </td>
@@ -74,7 +75,7 @@ export function showTableLoading() {
     const tableBody = document.getElementById('students-table-body');
     tableBody.innerHTML = `
         <tr>
-            <td colspan="8" class="p-8 text-center">
+            <td colspan="9" class="p-8 text-center">
                 <div class="flex items-center justify-center space-x-2">
                     <div class="spinner-border text-primary" role="status">
                         <span class="visually-hidden">Loading...</span>
@@ -90,7 +91,7 @@ export function showTableError(errorMessage = 'حدث خطأ أثناء تحمي
     const tableBody = document.getElementById('students-table-body');
     tableBody.innerHTML = `
         <tr>
-            <td colspan="8" class="p-8 text-center">
+            <td colspan="9" class="p-8 text-center">
                 <div class="flex flex-col items-center space-y-3">
                     <i class="fas fa-exclamation-triangle text-red-500 text-3xl"></i>
                     <p class="text-red-500 font-medium">${errorMessage}</p>

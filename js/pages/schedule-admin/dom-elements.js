@@ -3,7 +3,8 @@ export const elements = {
     form: document.getElementById('scheduleForm'),
     formTitle: document.getElementById('formTitle'),
     gradeSelect: document.getElementById('grade'),
-    // 'sectionContainer' and 'sectionSelect' have been removed.
+    teacherSelect: document.getElementById('teacher'), // ADDED: Teacher select
+    addTeacherBtn: document.getElementById('addTeacherBtn'), // ADDED: Add teacher button
     groupNameSelect: document.getElementById('group_name_select'),
     groupNameCustomInput: document.getElementById('group_name_custom'),
     saveBtn: document.getElementById('saveBtn'),
