@@ -112,6 +112,15 @@
                 <section id="students-section">
                     <div class="flex flex-col md:flex-row justify-content-between items-center mb-4 gap-4">
                         <h2 class="text-xl font-semibold text-gray-700">قائمة الطلاب (<span id="total-students-count">0</span>)</h2>
+                        
+                        <!-- FIXED: Added Teacher Filter Dropdown -->
+                        <div class="w-full md:w-auto md:max-w-xs">
+                            <select id="teacherFilter" class="w-full p-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-violet-500">
+                                <option value="all">كل المدرسين</option>
+                                <!-- Options will be populated by JS -->
+                            </select>
+                        </div>
+                        
                         <div class="relative w-full md:w-auto md:max-w-sm">
                             <input type="text" id="search-input" placeholder="ابحث بالاسم أو رقم الهاتف..." class="w-full p-2 pr-10 border border-gray-300 rounded-lg focus:ring-2 focus:ring-violet-500">
                             <i class="fas fa-search absolute top-1/2 right-3 -translate-y-1/2 text-gray-400"></i>
@@ -125,6 +134,8 @@
                                     <th class="p-3 font-semibold text-xs text-gray-500 uppercase tracking-wider">اسم الطالب</th>
                                     <th class="p-3 font-semibold text-xs text-gray-500 uppercase tracking-wider">الصف</th>
                                     <th class="p-3 font-semibold text-xs text-gray-500 uppercase tracking-wider">المجموعة والموعد</th>
+                                    <!-- FIXED: Added Teacher Column Header -->
+                                    <th class="p-3 font-semibold text-xs text-gray-500 uppercase tracking-wider">المدرس</th>
                                     <th class="p-3 font-semibold text-xs text-gray-500 uppercase tracking-wider text-left">رقم الطالب</th>
                                     <th class="p-3 font-semibold text-xs text-gray-500 uppercase tracking-wider text-left">رقم ولي الأمر</th>
                                     <th class="p-3 font-semibold text-xs text-gray-500 uppercase tracking-wider">تاريخ التسجيل</th>
@@ -133,7 +144,8 @@
                             </thead>
                             <tbody id="students-table-body">
                                 <tr>
-                                    <td colspan="8" class="p-8 text-center text-gray-400"><i class="fas fa-spinner fa-spin mr-2"></i> جاري تحميل البيانات...</td>
+                                    <!-- FIXED: Changed colspan to 9 -->
+                                    <td colspan="9" class="p-8 text-center text-gray-400"><i class="fas fa-spinner fa-spin mr-2"></i> جاري تحميل البيانات...</td>
                                 </tr>
                             </tbody>
                         </table>

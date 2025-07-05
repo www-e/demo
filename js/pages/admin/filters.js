@@ -2,28 +2,32 @@
 import { STUDENTS_PER_PAGE } from './constants.js';
 import { allStudents, currentFilter, currentPage, setAllStudents } from './state.js';
 import { renderTable, renderPagination } from './table-renderer.js';
-import { updateGroupStudentCount } from './filter-cards.js';  // FIXED: Import from correct file
+import { updateGroupStudentCount } from './filter-cards.js';
 import { convertTo12HourFormat, showLoading, hideLoading, showToast } from './helpers.js';
 import { fetchStudents, getStudentsCount } from './supabase-client.js';
 
-// NEW: Server-side filtering with loading states
+// Server-side filtering with loading states
 export async function applyFilters() {
     showLoading();
     
     try {
         // Fetch paginated data from server
+        // FIXED: The order of arguments was incorrect, causing the API error.
         const students = await fetchStudents(
             currentPage,
             STUDENTS_PER_PAGE,
             currentFilter.grade,
             currentFilter.group,
+            currentFilter.teacher, // <-- Corrected argument
             currentFilter.searchQuery
         );
         
         // Get total count for pagination
+        // FIXED: The order of arguments was incorrect here as well.
         const totalCount = await getStudentsCount(
             currentFilter.grade,
             currentFilter.group,
+            currentFilter.teacher, // <-- Corrected argument
             currentFilter.searchQuery
         );
         
@@ -37,13 +41,13 @@ export async function applyFilters() {
         console.error('Error applying filters:', error);
         showToast('حدث خطأ أثناء تحديث البيانات', 'error');
         document.getElementById('students-table-body').innerHTML = 
-            `<tr><td colspan="8" class="p-8 text-center text-red-500">حدث خطأ أثناء تحميل البيانات</td></tr>`;
+            `<tr><td colspan="9" class="p-8 text-center text-red-500">حدث خطأ أثناء تحميل البيانات</td></tr>`;
     } finally {
         hideLoading();
     }
 }
 
-// OLD: Keep for backward compatibility with group filtering
+// Keep for backward compatibility with group filtering
 export function updateGroupFilterDropdown() {
     const groupFilterSection = document.getElementById('secondary-filter-section');
     const groupSelect = document.getElementById('group-filter');

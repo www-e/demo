@@ -6,9 +6,24 @@ export function createTableHandler(elements, onEdit, onDelete) {
 
     function render(allSchedules = []) {
         let dataToRender = [...allSchedules];
+
+        // Apply Grade Filter
         if (currentGradeFilter !== 'all') {
             dataToRender = dataToRender.filter(s => s.grade === currentGradeFilter);
         }
+
+        // Apply Teacher Filter
+        const teacherFilterValue = elements.teacherFilterSelect.value;
+        if (teacherFilterValue !== 'all') {
+            // Check for null for the "General" teacher
+            if (teacherFilterValue) {
+                dataToRender = dataToRender.filter(s => s.teacher_id === teacherFilterValue);
+            } else {
+                dataToRender = dataToRender.filter(s => s.teacher_id === null);
+            }
+        }
+
+        // Apply Group Filter
         if (elements.groupFilterSelect.value !== 'all') {
             dataToRender = dataToRender.filter(s => s.group_name === elements.groupFilterSelect.value);
         }
@@ -16,7 +31,6 @@ export function createTableHandler(elements, onEdit, onDelete) {
         elements.tableBody.innerHTML = '';
         elements.mobileCardView.innerHTML = '';
         if (dataToRender.length === 0) {
-            // UPDATED: Colspan is now 6 (added teacher column)
             const emptyHTML = '<tr><td colspan="6" class="text-center p-4">لا توجد بيانات تطابق الفلتر.</td></tr>';
             elements.tableBody.innerHTML = emptyHTML;
             elements.mobileCardView.innerHTML = `<div class="text-center p-4 text-muted">لا توجد بيانات.</div>`;
@@ -30,13 +44,11 @@ export function createTableHandler(elements, onEdit, onDelete) {
             const actionButtonsHTML = `<button class="btn-action edit" data-group="${s.group_name}" data-grade="${s.grade}" data-teacher="${s.teacher_id || ''}" title="تعديل"><i class="fas fa-edit"></i></button><button class="btn-action delete" data-id="${s.id}" title="حذف"><i class="fas fa-trash-alt"></i></button>`;
             
             const groupTimeHTML = `<strong>${s.group_name}</strong><br><span class="time-tag">${convertTo12HourArabic(s.time_slot)}</span>`;
-            // ADDED: Teacher name column
             const teacherName = s.teacher?.name || 'عام (متاح للجميع)';
             const desktopRowHTML = `<tr class="${colorClass}"><td class="text-center">${index + 1}</td><td><span class="badge ${colorClass}">${translateGrade(s.grade)}</span></td><td>${groupTimeHTML}</td><td>${teacherName}</td><td>${new Date(s.created_at).toLocaleDateString('ar-EG')}</td><td><div class="action-buttons">${actionButtonsHTML}</div></td></tr>`;
             elements.tableBody.insertAdjacentHTML('beforeend', desktopRowHTML);
 
-            // ADDED: Teacher info in mobile card
-            const mobileCardHTML = `<div class="mobile-card ${colorClass}"><div class="card-header"><span class="group-name">${s.group_name} - ${convertTo12HourArabic(s.time_slot)}</span><span class="badge ${colorClass}">${translateGrade(s.grade)}</span></div><div class="teacher-info">المدرس: ${teacherName}</div><div class="card-footer action-buttons">${actionButtonsHTML}</div></div>`;
+            const mobileCardHTML = `<div class="mobile-card ${colorClass}"><div class="card-header"><span class="group-name">${s.group_name} - ${convertTo12HourArabic(s.time_slot)}</span><span class="badge ${colorClass}">${translateGrade(s.grade)}</span></div><div class="card-body-grid"><div class="card-row"><span class="card-label">المدرس:</span><span class="card-value">${teacherName}</span></div></div><div class="card-footer action-buttons">${actionButtonsHTML}</div></div>`;
             elements.mobileCardView.insertAdjacentHTML('beforeend', mobileCardHTML);
         });
     }
@@ -53,6 +65,11 @@ export function createTableHandler(elements, onEdit, onDelete) {
         elements.gradeFiltersContainer.querySelector('.active')?.classList.remove('active');
         e.target.classList.add('active');
         currentGradeFilter = e.target.dataset.grade;
+        
+        // FIXED: Reset other filters when a grade is selected to prevent conflicts
+        elements.teacherFilterSelect.value = 'all';
+        elements.groupFilterSelect.value = 'all';
+
         populateGroupFilter(allSchedules);
         render(allSchedules);
     }

@@ -1,17 +1,14 @@
 // js/services/teacher-service.js
-import { SUPABASE_URL, SUPABASE_ANON_KEY } from '../config.js';
-
-const supabase = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+import { supabase } from '../supabase-client.js';
 
 export async function fetchTeachers() {
     const { data, error } = await supabase
         .from('teachers')
         .select('*')
-        .eq('is_active', true)
-        .order('name');
+        .order('name'); // We fetch all teachers, active or not, for the management modal
     
     if (error) throw error;
-    return data;
+    return data.filter(t => t.is_active); // But only return active ones for dropdowns
 }
 
 export async function createTeacher(teacherData) {
@@ -37,23 +34,11 @@ export async function updateTeacher(id, teacherData) {
     return data;
 }
 
-export async function deleteTeacher(id) {
-    const { error } = await supabase
-        .from('teachers')
-        .update({ is_active: false })
-        .eq('id', id);
-    
-    if (error) throw error;
-}
+// NEW: Calls the RPC to safely delete a teacher and reassign relations
+export async function deleteAndReassignStudents(teacherId) {
+    const { error } = await supabase.rpc('delete_teacher_and_reassign_students', { 
+        teacher_id_to_delete: teacherId 
+    });
 
-export async function getTeacherById(id) {
-    const { data, error } = await supabase
-        .from('teachers')
-        .select('*')
-        .eq('id', id)
-        .eq('is_active', true)
-        .single();
-    
     if (error) throw error;
-    return data;
 }

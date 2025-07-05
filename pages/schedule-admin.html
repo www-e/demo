@@ -48,16 +48,13 @@
                                 <select id="grade" class="form-select" required></select>
                             </div>
                         </div>
-                        <!-- ADDED: Teacher Selection -->
                         <div class="col-md-6 col-lg-4">
                             <div class="form-group">
                                 <label for="teacher">المدرس</label>
                                 <div class="d-flex gap-2">
-                                    <select id="teacher" class="form-select">
-                                        <option value="">عام (متاح للجميع)</option>
-                                    </select>
-                                    <button type="button" class="btn btn-outline-primary" id="addTeacherBtn" title="إضافة مدرس جديد">
-                                        <i class="fas fa-plus"></i>
+                                    <select id="teacher" class="form-select"></select>
+                                    <button type="button" class="btn btn-outline-primary" id="addTeacherBtn" title="إدارة المدرسين">
+                                        <i class="fas fa-user-cog"></i>
                                     </button>
                                 </div>
                             </div>
@@ -96,10 +93,18 @@
                         <button class="filter-btn grade-second" data-grade="second">الصف الثاني</button>
                         <button class="filter-btn grade-third" data-grade="third">الصف الثالث</button>
                     </div>
-                    <div class="group-filter-container">
-                         <select id="groupFilter" class="form-select">
-                            <option value="all">كل المجموعات</option>
-                        </select>
+                    <!-- FIXED: Replaced the simple flex container with a more specific one for styling -->
+                    <div class="select-filters-container">
+                        <div class="group-filter-container">
+                             <select id="teacherFilter" class="form-select">
+                                <option value="all">كل المدرسين</option>
+                            </select>
+                        </div>
+                        <div class="group-filter-container">
+                             <select id="groupFilter" class="form-select">
+                                <option value="all">كل المجموعات</option>
+                            </select>
+                        </div>
                     </div>
                  </div>
             </div>
@@ -114,7 +119,7 @@
                                 <th>#</th>
                                 <th>الصف</th>
                                 <th>المجموعة والموعد</th>
-                                <th>المدرس</th> <!-- ADDED: Teacher column -->
+                                <th>المدرس</th>
                                 <th>تاريخ الإضافة</th>
                                 <th>إجراءات</th>
                             </tr>

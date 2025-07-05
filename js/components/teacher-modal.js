@@ -7,32 +7,34 @@ export class TeacherModal {
         this.isEditMode = false;
         this.currentTeacherId = null;
         this.onTeacherSaved = null;
+        this.onTeacherDelete = null; // Callback for delete
         this.createModal();
     }
 
     createModal() {
         const modalHTML = `
         <div class="modal fade" id="teacherModal" tabindex="-1" aria-labelledby="teacherModalLabel" aria-hidden="true">
-            <div class="modal-dialog modal-dialog-centered">
+            <div class="modal-dialog modal-dialog-centered modal-lg">
                 <div class="modal-content">
                     <div class="modal-header">
-                        <h5 class="modal-title" id="teacherModalLabel">إضافة مدرس جديد</h5>
+                        <h5 class="modal-title" id="teacherModalLabel">إدارة المدرسين</h5>
                         <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
                     </div>
                     <div class="modal-body">
-                        <form id="teacherForm">
-                            <div class="mb-3">
-                                <label for="teacherName" class="form-label">اسم المدرس</label>
-                                <input type="text" class="form-control" id="teacherName" name="name" required>
-                                <div class="invalid-feedback">يرجى إدخال اسم المدرس</div>
-                            </div>
+                        <!-- Teacher List -->
+                        <div id="teacherListContainer" class="mb-4">
+                           <p class="text-center text-muted">جاري تحميل قائمة المدرسين...</p>
+                        </div>
+                        <hr/>
+                        <!-- Add/Edit Form -->
+                        <h6 id="teacherFormTitle" class="mt-4">إضافة مدرس جديد</h6>
+                        <form id="teacherForm" class="d-flex align-items-center gap-2">
+                            <input type="text" class="form-control" id="teacherName" name="name" required placeholder="اسم المدرس">
+                            <button type="submit" class="btn btn-primary" id="saveTeacherBtn" style="white-space: nowrap;">
+                                <i class="fas fa-plus"></i> إضافة
+                            </button>
+                             <button type="button" class="btn btn-secondary" id="cancelEditBtn" style="display: none; white-space: nowrap;">إلغاء</button>
                         </form>
-                    </div>
-                    <div class="modal-footer">
-                        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">إلغاء</button>
-                        <button type="button" class="btn btn-primary" id="saveTeacherBtn">
-                            <i class="fas fa-save"></i> حفظ
-                        </button>
                     </div>
                 </div>
             </div>
@@ -42,120 +44,112 @@ export class TeacherModal {
         this.modal = new bootstrap.Modal(document.getElementById('teacherModal'));
         this.setupEventListeners();
     }
+    
+    renderTeachersList(teachers) {
+        const container = document.getElementById('teacherListContainer');
+        if (!teachers || teachers.length === 0) {
+            container.innerHTML = '<p class="text-center text-muted">لا يوجد مدرسين حالياً.</p>';
+            return;
+        }
+
+        container.innerHTML = `
+            <ul class="list-group">
+                ${teachers.map(teacher => `
+                    <li class="list-group-item d-flex justify-content-between align-items-center">
+                        <span>${teacher.name}</span>
+                        ${!teacher.name.includes('عام') ? `
+                        <div>
+                            <button class="btn btn-sm btn-outline-info" data-action="edit" data-id="${teacher.id}" data-name="${teacher.name}"><i class="fas fa-edit"></i></button>
+                            <button class="btn btn-sm btn-outline-danger" data-action="delete" data-id="${teacher.id}" data-name="${teacher.name}"><i class="fas fa-trash"></i></button>
+                        </div>
+                        ` : ''}
+                    </li>
+                `).join('')}
+            </ul>`;
+            
+        // Add event listeners for new buttons
+        container.querySelectorAll('button').forEach(button => {
+            button.addEventListener('click', (e) => {
+                const action = e.currentTarget.dataset.action;
+                const id = e.currentTarget.dataset.id;
+                const name = e.currentTarget.dataset.name;
+                const teacher = { id, name };
+
+                if (action === 'edit') {
+                    this.handleEdit(teacher);
+                } else if (action === 'delete') {
+                    if (this.onTeacherDelete) this.onTeacherDelete(teacher);
+                }
+            });
+        });
+    }
 
     setupEventListeners() {
         const form = document.getElementById('teacherForm');
-        const saveBtn = document.getElementById('saveTeacherBtn');
-        const nameInput = document.getElementById('teacherName');
-
-        saveBtn.addEventListener('click', () => this.handleSave());
-        
         form.addEventListener('submit', (e) => {
             e.preventDefault();
             this.handleSave();
         });
 
-        // Real-time validation
-        nameInput.addEventListener('input', () => {
-            this.validateForm();
-        });
+        document.getElementById('cancelEditBtn').addEventListener('click', () => this.resetForm());
     }
 
-    validateForm() {
-        const nameInput = document.getElementById('teacherName');
-        const saveBtn = document.getElementById('saveTeacherBtn');
-        
-        const isValid = nameInput.value.trim().length >= 2;
-        
-        if (isValid) {
-            nameInput.classList.remove('is-invalid');
-            saveBtn.disabled = false;
-        } else {
-            nameInput.classList.add('is-invalid');
-            saveBtn.disabled = true;
-        }
-        
-        return isValid;
+    handleEdit(teacher) {
+        this.isEditMode = true;
+        this.currentTeacherId = teacher.id;
+        document.getElementById('teacherFormTitle').textContent = `تعديل المدرس: ${teacher.name}`;
+        document.getElementById('teacherName').value = teacher.name;
+        document.getElementById('saveTeacherBtn').innerHTML = '<i class="fas fa-save"></i> تحديث';
+        document.getElementById('cancelEditBtn').style.display = 'inline-block';
+    }
+
+    resetForm() {
+        this.isEditMode = false;
+        this.currentTeacherId = null;
+        document.getElementById('teacherForm').reset();
+        document.getElementById('teacherFormTitle').textContent = 'إضافة مدرس جديد';
+        document.getElementById('saveTeacherBtn').innerHTML = '<i class="fas fa-plus"></i> إضافة';
+        document.getElementById('cancelEditBtn').style.display = 'none';
     }
 
     async handleSave() {
-        if (!this.validateForm()) return;
+        const nameInput = document.getElementById('teacherName');
+        const name = nameInput.value.trim();
+        if (name.length < 2) {
+            showToast('اسم المدرس يجب أن يكون حرفين على الأقل', 'error');
+            return;
+        }
 
         const saveBtn = document.getElementById('saveTeacherBtn');
         const originalText = saveBtn.innerHTML;
-        
         saveBtn.disabled = true;
-        saveBtn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> جاري الحفظ...';
+        saveBtn.innerHTML = '<i class="fas fa-spinner fa-spin"></i>';
 
         try {
-            const formData = new FormData(document.getElementById('teacherForm'));
-            const teacherData = {
-                name: formData.get('name').trim()
-            };
-
-            let result;
             if (this.isEditMode) {
-                result = await updateTeacher(this.currentTeacherId, teacherData);
+                await updateTeacher(this.currentTeacherId, { name });
+                showToast('تم تحديث المدرس بنجاح', 'success');
             } else {
-                result = await createTeacher(teacherData);
+                await createTeacher({ name });
+                showToast('تم إضافة المدرس بنجاح', 'success');
             }
-
-            this.modal.hide();
-            
-            if (this.onTeacherSaved) {
-                this.onTeacherSaved(result);
-            }
-
-            this.showToast(
-                this.isEditMode ? 'تم تحديث المدرس بنجاح' : 'تم إضافة المدرس بنجاح',
-                'success'
-            );
-
+            this.resetForm();
+            if (this.onTeacherSaved) this.onTeacherSaved();
         } catch (error) {
-            console.error('Error saving teacher:', error);
-            let errorMessage = 'حدث خطأ أثناء الحفظ';
-            
-            if (error.code === '23505') {
-                errorMessage = 'اسم المدرس موجود بالفعل';
-            }
-            
-            this.showToast(errorMessage, 'error');
+            const errorMessage = error.code === '23505' ? 'اسم المدرس موجود بالفعل' : 'حدث خطأ أثناء الحفظ';
+            showToast(errorMessage, 'error');
         } finally {
             saveBtn.disabled = false;
             saveBtn.innerHTML = originalText;
         }
     }
 
-    show(teacherData = null) {
-        this.isEditMode = !!teacherData;
-        this.currentTeacherId = teacherData?.id || null;
-
-        const modalTitle = document.getElementById('teacherModalLabel');
-        const nameInput = document.getElementById('teacherName');
-        const saveBtn = document.getElementById('saveTeacherBtn');
-
-        if (this.isEditMode) {
-            modalTitle.textContent = 'تعديل المدرس';
-            nameInput.value = teacherData.name;
-            saveBtn.innerHTML = '<i class="fas fa-save"></i> تحديث';
-        } else {
-            modalTitle.textContent = 'إضافة مدرس جديد';
-            nameInput.value = '';
-            saveBtn.innerHTML = '<i class="fas fa-save"></i> حفظ';
-        }
-
-        // Reset validation state
-        nameInput.classList.remove('is-invalid');
-        saveBtn.disabled = false;
-
+    show(teachers) {
+        this.renderTeachersList(teachers);
+        this.resetForm();
         this.modal.show();
-        
-        // Focus on name input after modal is shown
-        document.getElementById('teacherModal').addEventListener('shown.bs.modal', () => {
-            nameInput.focus();
-        }, { once: true });
     }
-
+    
     hide() {
         this.modal.hide();
     }
@@ -163,38 +157,22 @@ export class TeacherModal {
     onSaved(callback) {
         this.onTeacherSaved = callback;
     }
-
-    showToast(message, type = 'success') {
-        const toastTypeClasses = { 
-            success: 'bg-success', 
-            error: 'bg-danger', 
-            info: 'bg-info', 
-            warning: 'bg-warning' 
-        };
-        const headerClass = toastTypeClasses[type] || 'bg-secondary';
-        
-        const toastHTML = `
-            <div class="toast" role="alert" aria-live="assertive" aria-atomic="true">
-                <div class="toast-header text-white ${headerClass}">
-                    <strong class="me-auto">${type === 'error' ? 'خطأ' : 'إشعار'}</strong>
-                    <button type="button" class="btn-close btn-close-white" data-bs-dismiss="toast"></button>
-                </div>
-                <div class="toast-body">${message}</div>
-            </div>`;
-        
-        let container = document.getElementById('toastContainer');
-        if (!container) {
-            container = document.createElement('div');
-            container.id = 'toastContainer';
-            container.className = 'toast-container position-fixed top-0 end-0 p-3';
-            container.style.zIndex = '1100';
-            document.body.appendChild(container);
-        }
-        
-        container.insertAdjacentHTML('beforeend', toastHTML);
-        const newToast = container.lastElementChild;
-        const bsToast = new bootstrap.Toast(newToast, { delay: type === 'error' ? 6000 : 4000 });
-        bsToast.show();
-        newToast.addEventListener('hidden.bs.toast', () => newToast.remove());
+    
+    onDelete(callback) {
+        this.onTeacherDelete = callback;
     }
+}
+
+// Helper function, assuming it's not exported elsewhere
+function showToast(message, type = 'success') {
+    const toastTypeClasses = { success: 'bg-success', error: 'bg-danger', info: 'bg-info', warning: 'bg-warning' };
+    const headerClass = toastTypeClasses[type] || 'bg-secondary';
+    const toastHTML = `<div class="toast" role="alert" aria-live="assertive" aria-atomic="true"><div class="toast-header text-white ${headerClass}"><strong class="me-auto">${type === 'error' ? 'خطأ' : 'إشعار'}</strong><button type="button" class="btn-close btn-close-white" data-bs-dismiss="toast"></button></div><div class="toast-body">${message}</div></div>`;
+    let container = document.getElementById('toastContainer');
+    if (!container) return;
+    container.insertAdjacentHTML('beforeend', toastHTML);
+    const newToast = container.lastElementChild;
+    const bsToast = new bootstrap.Toast(newToast, { delay: 5000 });
+    bsToast.show();
+    newToast.addEventListener('hidden.bs.toast', () => newToast.remove());
 }

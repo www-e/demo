@@ -5,7 +5,6 @@ let allSchedules = []; // Cache for fetched schedules
 
 export async function loadSchedulesFromDB() {
     try {
-        // ADDED: Include teacher information in the query
         const { data, error } = await supabase
             .from('schedules')
             .select(`
@@ -22,16 +21,21 @@ export async function loadSchedulesFromDB() {
     }
 }
 
-// MODIFIED: Added teacherId parameter to filter schedules by teacher
+// MODIFIED: Corrected filtering logic for teachers
 export function getAvailableGroupTimes(grade, teacherId = null) {
     if (!grade) return [];
-    let relevantSchedules = allSchedules.filter(s => s.grade === grade);
     
-    // ADDED: Filter by teacher if specified
-    if (teacherId && teacherId !== 'all') {
-        relevantSchedules = relevantSchedules.filter(schedule => 
-            schedule.teacher_id === teacherId || schedule.teacher_id === null
-        );
+    // 1. Filter by grade first
+    let schedulesByGrade = allSchedules.filter(s => s.grade === grade);
+    
+    // 2. Then, filter by teacher
+    let relevantSchedules;
+    if (teacherId) {
+        // If a specific teacher is selected, ONLY show their schedules. Do not fall back to general.
+        relevantSchedules = schedulesByGrade.filter(schedule => schedule.teacher_id === teacherId);
+    } else {
+        // If NO teacher is selected, show ONLY general schedules.
+        relevantSchedules = schedulesByGrade.filter(schedule => schedule.teacher_id === null);
     }
 
     relevantSchedules.sort((a, b) => {
@@ -66,7 +70,6 @@ async function checkExistingRegistration(phone, grade) {
     return count > 0;
 }
 
-// UNCHANGED: Keeping your existing submitRegistration function exactly as is
 export async function submitRegistration(registrationData) {
     const exists = await checkExistingRegistration(registrationData.student_phone, registrationData.grade);
     if (exists) {
@@ -76,7 +79,6 @@ export async function submitRegistration(registrationData) {
     const { error } = await supabase.from('registrations_2025_2026').insert([registrationData]);
 
     if (error) {
-        // Log the detailed error from Supabase for better debugging
         console.error("Supabase insert error:", error);
         if (error.code === '23505') { 
             return { success: false, error: 'الطالب مسجل بالفعل.', errorCode: 'DUPLICATE_STUDENT' };

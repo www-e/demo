@@ -1,11 +1,11 @@
 // js/pages/schedule-admin/main-admin.js
 import { initializeUpdateModal } from '../../components/update-modal.js';
-import { TeacherModal } from '../../components/teacher-modal.js'; // ADDED: Import teacher modal
+import { TeacherModal } from '../../components/teacher-modal.js';
 import { elements } from './dom-elements.js';
 import { showToast, showConfirmation, showLoader, populateSelect } from './ui-helpers.js';
 import { createTimeBuilder } from './time-builder.js';
 import { createTableHandler } from './table-handler.js';
-import { fetchTeachers } from '../../services/teacher-service.js'; // ADDED: Import teacher service
+import { fetchTeachers, deleteAndReassignStudents } from '../../services/teacher-service.js';
 import * as ScheduleService from '../../services/schedule-service.js';
 
 // --- Page Loader Logic ---
@@ -24,13 +24,36 @@ document.addEventListener('DOMContentLoaded', () => {
 
     // --- State ---
     let allSchedules = [];
-    let allTeachers = []; // ADDED: Teachers state
+    let allTeachers = [];
     let isEditingGroup = null;
 
-    // ADDED: Teacher Modal
+    // --- Teacher Modal ---
     const teacherModal = new TeacherModal();
-    teacherModal.onSaved(() => {
-        loadTeachers();
+    teacherModal.onSaved(async () => {
+        // FIXED: After saving, reload both teachers and schedules to reflect all changes
+        await loadTeachers(); 
+        await loadSchedules();
+    });
+    teacherModal.onDelete(async (teacher) => {
+        teacherModal.hide();
+
+        showConfirmation({
+            modal: { instance: elements.confirmationModal, title: elements.confirmationModalTitle, body: elements.confirmationModalBody, confirmBtn: elements.confirmActionBtn },
+            title: 'تأكيد الحذف',
+            body: `هل أنت متأكد من حذف المدرس "${teacher.name}"؟ سيتم نقل كل الطلاب والمجموعات المسجلين معه إلى "عام". لا يمكن التراجع عن هذا الإجراء.`,
+            confirmText: 'نعم، حذف وأعد التعيين',
+            btnClass: 'btn-danger',
+            onConfirm: async () => {
+                try {
+                    await deleteAndReassignStudents(teacher.id);
+                    showToast('تم حذف المدرس ونقل الطلاب بنجاح.', 'success');
+                    // FIXED: Reload all data to ensure UI consistency after deletion
+                    await Promise.all([loadTeachers(), loadSchedules()]);
+                } catch (error) {
+                    showToast('خطأ في الحذف: ' + error.message, 'error');
+                }
+            }
+        });
     });
 
     // --- Module Instances ---
@@ -41,9 +64,13 @@ document.addEventListener('DOMContentLoaded', () => {
     async function loadSchedules() {
         showLoader(elements.loader, elements.schedulesTableContainer, true);
         try {
-            allSchedules = await ScheduleService.fetchSchedulesWithTeachers(); // CHANGED: Use teacher-aware fetch
+            allSchedules = await ScheduleService.fetchSchedulesWithTeachers();
             tableHandler.render(allSchedules);
             tableHandler.populateGroupFilter(allSchedules);
+            // FIXED: Also re-populate the teacher filter, as schedule changes can affect it.
+            if (allTeachers.length > 0) {
+                populateTeacherSelects(allTeachers);
+            }
         } catch (error) {
             showToast('خطأ في تحميل المواعيد: ' + error.message, 'error');
         } finally {
@@ -51,23 +78,34 @@ document.addEventListener('DOMContentLoaded', () => {
         }
     }
 
-    // ADDED: Load Teachers function
     async function loadTeachers() {
         try {
-            allTeachers = await fetchTeachers();
-            populateTeacherSelect();
+            const fetchedTeachers = await fetchTeachers();
+            allTeachers = fetchedTeachers; // Update state
+            populateTeacherSelects(fetchedTeachers);
+            teacherModal.renderTeachersList(fetchedTeachers); // Update the list inside the modal
         } catch (error) {
             showToast('خطأ في تحميل المدرسين: ' + error.message, 'error');
         }
     }
 
-    // ADDED: Populate teacher select
-    function populateTeacherSelect() {
-        const teacherOptions = [
-            { v: '', t: 'عام (متاح للجميع)' },
-            ...allTeachers.map(teacher => ({ v: teacher.id, t: teacher.name }))
+    function populateTeacherSelects(teachers) {
+        const generalTeacher = teachers.find(t => t.name.includes('عام'));
+        const otherTeachers = teachers.filter(t => !t.name.includes('عام'));
+
+        const formOptions = [
+            { v: generalTeacher ? generalTeacher.id : '', t: 'عام (متاح للجميع)' },
+            ...otherTeachers.map(teacher => ({ v: teacher.id, t: teacher.name }))
         ];
-        populateSelect(elements.teacherSelect, teacherOptions, 'اختر المدرس...');
+        populateSelect(elements.teacherSelect, formOptions, 'اختر المدرس...');
+
+        const filterOptions = [
+             { v: 'all', t: 'كل المدرسين' },
+            ...teachers.map(teacher => ({ v: teacher.id, t: teacher.name }))
+        ];
+        if (elements.teacherFilterSelect) {
+            populateSelect(elements.teacherFilterSelect, filterOptions, 'فلترة بالمدرس...');
+        }
     }
     
     function resetForm() {
@@ -92,19 +130,24 @@ document.addEventListener('DOMContentLoaded', () => {
                 const groupSchedules = allSchedules.filter(s => 
                     s.grade === grade && 
                     s.group_name === group && 
-                    (s.teacher_id === teacher || (!s.teacher_id && !teacher))
+                    (s.teacher_id === teacher || (s.teacher_id === null && !teacher))
                 );
                 
                 elements.formTitle.textContent = `تعديل مجموعة: ${group}`;
                 elements.gradeSelect.value = grade;
-                elements.teacherSelect.value = teacher || ''; // ADDED: Set teacher value
+                elements.teacherSelect.value = teacher || '';
                 
                 const standardGroup = Array.from(elements.groupNameSelect.options).find(opt => opt.value === group);
                 elements.groupNameSelect.value = standardGroup ? group : 'custom';
                 elements.groupNameCustomInput.style.display = standardGroup ? 'none' : 'block';
                 if (!standardGroup) elements.groupNameCustomInput.value = group;
                 
-                timeBuilder.setTimes(groupSchedules.map(s => s.time_slot));
+                const timeSlots = groupSchedules.map(s => s.time_slot);
+                timeBuilder.setTimes(timeSlots);
+                
+                if (timeSlots.length > 0) {
+                    timeBuilder.prefill(timeSlots[0]);
+                }
                 
                 elements.saveBtn.innerHTML = '<i class="fas fa-save"></i> حفظ التعديلات';
                 elements.cancelBtn.style.display = 'inline-block';
@@ -122,7 +165,7 @@ document.addEventListener('DOMContentLoaded', () => {
                 try {
                     await ScheduleService.deleteScheduleById(id);
                     showToast('تم حذف الموعد بنجاح!', 'delete');
-                    await loadSchedules();
+                    await loadSchedules(); // Reload data
                 } catch (error) { showToast('خطأ في الحذف: ' + error.message, 'error'); }
             }
         });
@@ -132,7 +175,7 @@ document.addEventListener('DOMContentLoaded', () => {
         e.preventDefault();
         const groupName = elements.groupNameSelect.value === 'custom' ? elements.groupNameCustomInput.value.trim() : elements.groupNameSelect.value;
         const timeSlots = timeBuilder.getTimes();
-        const teacherId = elements.teacherSelect.value || null; // ADDED: Get teacher ID
+        const teacherId = elements.teacherSelect.value || null;
         
         if (!elements.gradeSelect.value || !groupName || timeSlots.length === 0) {
             return showToast('يرجى ملء جميع الحقول.', 'error');
@@ -148,15 +191,14 @@ document.addEventListener('DOMContentLoaded', () => {
                     grade: elements.gradeSelect.value, 
                     group_name: groupName, 
                     time_slot: time,
-                    teacher_id: teacherId // ADDED: Include teacher_id
+                    teacher_id: teacherId
                 }));
                 
                 try {
-                    // CHANGED: Use teacher-aware save function
                     await ScheduleService.saveScheduleWithTeacher(records, !!isEditingGroup, isEditingGroup);
                     showToast(isEditingGroup ? 'تم تعديل المجموعة!' : 'تمت إضافة المجموعة!', 'success');
                     resetForm();
-                    await loadSchedules();
+                    await loadSchedules(); // Reload data
                 } catch (error) { 
                     showToast(error.code === '23505' ? 'خطأ: أحد هذه المواعيد موجود بالفعل.' : 'حدث خطأ: ' + error.message, 'error'); 
                 }
@@ -164,40 +206,23 @@ document.addEventListener('DOMContentLoaded', () => {
         });
     }
 
-    // ADDED: Handle Add Teacher
     function handleAddTeacher() {
-        teacherModal.show();
+        teacherModal.show(allTeachers);
     }
 
     // --- Initial Setup & Event Listeners ---
-    populateSelect(elements.gradeSelect, [ 
-        { v: 'first', t: 'الأول الثانوي'}, 
-        { v: 'second', t: 'الثاني الثانوي'}, 
-        { v: 'third', t: 'الثالث الثانوي'}
-    ], 'اختر الصف...');
-    
-    populateSelect(elements.groupNameSelect, [ 
-        {v: "السبت و الثلاثاء", t: "السبت و الثلاثاء"}, 
-        {v: "الأحد و الأربعاء", t: "الأحد و الأربعاء"}, 
-        {v: "الاثنين و الخميس", t: "الاثنين و الخميس"}, 
-        {v: "السبت و الثلاثاء و الخميس", t: "السبت و الثلاثاء و الخميس"}, 
-        {v: "الأحد و الأربعاء و الجمعة", t: "الأحد و الأربعاء و الجمعة"}, 
-        {v: "custom", t: "أخرى"} 
-    ], "اختر أيام المجموعة...");
+    populateSelect(elements.gradeSelect, [ { v: 'first', t: 'الأول الثانوي'}, { v: 'second', t: 'الثاني الثانوي'}, { v: 'third', t: 'الثالث الثانوي'}], 'اختر الصف...');
+    populateSelect(elements.groupNameSelect, [ {v: "السبت و الثلاثاء", t: "السبت و الثلاثاء"}, {v: "الأحد و الأربعاء", t: "الأحد و الأربعاء"}, {v: "الاثنين و الخميس", t: "الاثنين و الخميس"}, {v: "السبت و الثلاثاء و الخميس", t: "السبت و الثلاثاء و الخميس"}, {v: "الأحد و الأربعاء و الجمعة", t: "الأحد و الأربعاء و الجمعة"}, {v: "custom", t: "أخرى"} ], "اختر أيام المجموعة...");
     
     timeBuilder.setup();
-    
-    elements.groupNameSelect.addEventListener('change', () => {
-        elements.groupNameCustomInput.style.display = (elements.groupNameSelect.value === 'custom') ? 'block' : 'none';
-    });
-    
+    elements.groupNameSelect.addEventListener('change', () => { elements.groupNameCustomInput.style.display = (elements.groupNameSelect.value === 'custom') ? 'block' : 'none'; });
     elements.form.addEventListener('submit', handleSave);
     elements.cancelBtn.addEventListener('click', resetForm);
-    elements.addTeacherBtn.addEventListener('click', handleAddTeacher); // ADDED: Teacher button event
-    
+    elements.addTeacherBtn.addEventListener('click', handleAddTeacher);
     elements.gradeFiltersContainer.addEventListener('click', (e) => tableHandler.handleGradeFilterClick(e, allSchedules));
     elements.groupFilterSelect.addEventListener('change', () => tableHandler.render(allSchedules));
+    if (elements.teacherFilterSelect) { elements.teacherFilterSelect.addEventListener('change', () => tableHandler.render(allSchedules)); }
     
-    // CHANGED: Load both schedules and teachers
+    // Initial data load
     Promise.all([loadSchedules(), loadTeachers()]);
 });

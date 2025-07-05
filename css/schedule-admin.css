@@ -85,13 +85,23 @@ body { background-color: #f8f9fa; }
 .toast.toast-delete .toast-header { background-color: var(--warning); color: black; }
 .toast.toast-delete .btn-close-white { filter: none; }
 
+/* ... at the bottom of the file ... */
+
 @media (max-width: 767px) {
     .brand-text-desktop { display: none; }
     .brand-text-mobile { display: block; }
     .nav-link-item span { display: none; }
     .nav-link-item { padding: 0.75rem; }
     .admin-container { padding: 0 0.5rem; margin-top: 1rem; }
-    .filter-controls, .grade-filters { flex-direction: column; align-items: stretch; }
+    .filter-controls { flex-direction: column; align-items: stretch; }
+    .grade-filters {
+        flex-wrap: wrap;
+        justify-content: center;
+    }
+    .select-filters-container {
+        flex-direction: column;
+        width: 100%;
+    }
     .filter-btn { flex-grow: 1; text-align: center; }
     .form-card, .table-card, .filter-card { padding: 1rem; }
     .time-builder { grid-template-columns: 1fr 1fr; }
@@ -158,4 +168,13 @@ main.flex-grow-1 {
         flex-direction: column;
         text-align: center;
     }
+}
+/* ... in CARDS, FORMS, & FILTERS section ... */
+.group-filter-container { min-width: 250px; }
+
+/* ADD THIS NEW BLOCK */
+.select-filters-container {
+    display: flex;
+    gap: 1rem;
+    flex-wrap: wrap;
 }

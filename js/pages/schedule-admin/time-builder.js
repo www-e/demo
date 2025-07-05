@@ -45,7 +45,7 @@ export function createTimeBuilder(elements) {
     
     function renderPills() {
         elements.timePillsContainer.innerHTML = '';
-        addedTimes.forEach(time => {
+        Array.from(addedTimes).sort().forEach(time => { // Sort times for consistent order
             const pill = document.createElement('div');
             pill.className = 'time-pill';
             if (time === editingTime) pill.classList.add('editing');
@@ -59,13 +59,23 @@ export function createTimeBuilder(elements) {
 
     function edit(time) {
         editingTime = time;
-        const [h24, m] = time.split(':');
-        const hour24 = parseInt(h24, 10), period = hour24 >= 12 ? 'PM' : 'AM', hour12 = hour24 % 12 === 0 ? 12 : hour24 % 12;
+        prefill(time); // Use the new prefill function
+        elements.addTimeBtn.innerHTML = '<i class="fas fa-check"></i> تحديث الوقت';
+        renderPills();
+    }
+
+    // ADDED: New function to pre-fill the time builder dropdowns
+    function prefill(time24) {
+        if (!time24) return;
+        const [h24, m] = time24.split(':');
+        const hour24 = parseInt(h24, 10);
+        const period = hour24 >= 12 ? 'PM' : 'AM';
+        const hour12 = hour24 % 12 === 0 ? 12 : hour24 % 12;
+
         elements.timeHourSelect.value = hour12;
         elements.timeMinuteSelect.value = m;
         elements.timePeriodSelect.value = period;
-        elements.addTimeBtn.innerHTML = '<i class="fas fa-check"></i> تحديث الوقت';
-        updatePreview(); renderPills();
+        updatePreview();
     }
     
     function remove(time) {
@@ -100,10 +110,9 @@ export function createTimeBuilder(elements) {
         select.value = "";
     }
 
-    // Attach internal event listeners
     elements.addTimeBtn.addEventListener('click', add);
     [elements.timeHourSelect, elements.timeMinuteSelect, elements.timePeriodSelect].forEach(el => el.addEventListener('change', updatePreview));
     
     // Public API for the time builder
-    return { setup, getTimes, setTimes, clear };
+    return { setup, getTimes, setTimes, clear, prefill }; // Expose the new function
 }

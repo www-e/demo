@@ -51,9 +51,10 @@ document.addEventListener('DOMContentLoaded', async () => {
     async function loadTeachers() {
         try {
             const teachers = await fetchTeachers();
+            // FIXED: Use `text` instead of `label` for property name
             updateSelectOptions(teacherSelect, teachers.map(teacher => ({
                 value: teacher.id,
-                label: teacher.name
+                text: teacher.name 
             })), 'اختر المدرس');
         } catch (error) {
             console.error('Error loading teachers:', error);
@@ -76,13 +77,12 @@ document.addEventListener('DOMContentLoaded', async () => {
     // MODIFIED: Updated to include teacher filter
     function updateGroupTimeOptions() {
         const grade = gradeSelect.value;
-        const teacherId = teacherSelect.value; // ADDED: Get selected teacher
-        const groupTimes = getAvailableGroupTimes(grade, teacherId); // ADDED: Pass teacher ID
+        const teacherId = teacherSelect.value;
+        const groupTimes = getAvailableGroupTimes(grade, teacherId);
         
-        updateSelectOptions(groupTimeSelect, groupTimes.map(gt => ({
-            value: gt.value,
-            label: gt.text
-        })), 'اختر المجموعة والموعد');
+        // FIXED: `getAvailableGroupTimes` already returns the correct format.
+        // No need to re-map the array. This fixes the empty/white dropdown issue.
+        updateSelectOptions(groupTimeSelect, groupTimes, 'اختر المجموعة والموعد');
         
         groupTimeSelect.disabled = !groupTimes.length;
     }
