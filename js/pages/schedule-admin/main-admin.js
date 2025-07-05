@@ -30,7 +30,8 @@ document.addEventListener('DOMContentLoaded', () => {
     // --- Teacher Modal ---
     const teacherModal = new TeacherModal();
     teacherModal.onSaved(async () => {
-        // FIXED: After saving, reload both teachers and schedules to reflect all changes
+        // FIXED: After saving, reset filters before reloading data
+        tableHandler.resetFilters();
         await loadTeachers(); 
         await loadSchedules();
     });
@@ -47,7 +48,8 @@ document.addEventListener('DOMContentLoaded', () => {
                 try {
                     await deleteAndReassignStudents(teacher.id);
                     showToast('تم حذف المدرس ونقل الطلاب بنجاح.', 'success');
-                    // FIXED: Reload all data to ensure UI consistency after deletion
+                    // FIXED: Reset filters to 'all' to show the updated data correctly
+                    tableHandler.resetFilters();
                     await Promise.all([loadTeachers(), loadSchedules()]);
                 } catch (error) {
                     showToast('خطأ في الحذف: ' + error.message, 'error');
@@ -67,7 +69,6 @@ document.addEventListener('DOMContentLoaded', () => {
             allSchedules = await ScheduleService.fetchSchedulesWithTeachers();
             tableHandler.render(allSchedules);
             tableHandler.populateGroupFilter(allSchedules);
-            // FIXED: Also re-populate the teacher filter, as schedule changes can affect it.
             if (allTeachers.length > 0) {
                 populateTeacherSelects(allTeachers);
             }
@@ -165,7 +166,9 @@ document.addEventListener('DOMContentLoaded', () => {
                 try {
                     await ScheduleService.deleteScheduleById(id);
                     showToast('تم حذف الموعد بنجاح!', 'delete');
-                    await loadSchedules(); // Reload data
+                    // FIXED: Reset filters before reloading to prevent empty table
+                    tableHandler.resetFilters();
+                    await loadSchedules();
                 } catch (error) { showToast('خطأ في الحذف: ' + error.message, 'error'); }
             }
         });
@@ -198,7 +201,9 @@ document.addEventListener('DOMContentLoaded', () => {
                     await ScheduleService.saveScheduleWithTeacher(records, !!isEditingGroup, isEditingGroup);
                     showToast(isEditingGroup ? 'تم تعديل المجموعة!' : 'تمت إضافة المجموعة!', 'success');
                     resetForm();
-                    await loadSchedules(); // Reload data
+                    // FIXED: Reset filters before reloading to prevent empty table
+                    tableHandler.resetFilters();
+                    await loadSchedules();
                 } catch (error) { 
                     showToast(error.code === '23505' ? 'خطأ: أحد هذه المواعيد موجود بالفعل.' : 'حدث خطأ: ' + error.message, 'error'); 
                 }
@@ -222,6 +227,9 @@ document.addEventListener('DOMContentLoaded', () => {
     elements.gradeFiltersContainer.addEventListener('click', (e) => tableHandler.handleGradeFilterClick(e, allSchedules));
     elements.groupFilterSelect.addEventListener('change', () => tableHandler.render(allSchedules));
     if (elements.teacherFilterSelect) { elements.teacherFilterSelect.addEventListener('change', () => tableHandler.render(allSchedules)); }
+    
+    // FIXED: Reset filters on page load to solve intermittent loading issue.
+    tableHandler.resetFilters();
     
     // Initial data load
     Promise.all([loadSchedules(), loadTeachers()]);

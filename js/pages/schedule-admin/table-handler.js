@@ -4,6 +4,19 @@ import { translateGrade, convertTo12HourArabic } from './ui-helpers.js';
 export function createTableHandler(elements, onEdit, onDelete) {
     let currentGradeFilter = 'all';
 
+    // NEW: Function to reset all filters to their default 'all' state.
+    function resetFilters() {
+        currentGradeFilter = 'all'; // 1. Reset the internal grade filter state
+        
+        // 2. Reset the grade filter buttons in the UI
+        elements.gradeFiltersContainer.querySelector('.active')?.classList.remove('active');
+        elements.gradeFiltersContainer.querySelector('[data-grade="all"]').classList.add('active');
+        
+        // 3. Reset the dropdown filters in the UI
+        elements.teacherFilterSelect.value = 'all';
+        elements.groupFilterSelect.value = 'all';
+    }
+
     function render(allSchedules = []) {
         let dataToRender = [...allSchedules];
 
@@ -15,10 +28,9 @@ export function createTableHandler(elements, onEdit, onDelete) {
         // Apply Teacher Filter
         const teacherFilterValue = elements.teacherFilterSelect.value;
         if (teacherFilterValue !== 'all') {
-            // Check for null for the "General" teacher
-            if (teacherFilterValue) {
+            if (teacherFilterValue) { // Handles specific teachers
                 dataToRender = dataToRender.filter(s => s.teacher_id === teacherFilterValue);
-            } else {
+            } else { // Handles "عام" which has a null teacher_id
                 dataToRender = dataToRender.filter(s => s.teacher_id === null);
             }
         }
@@ -66,7 +78,6 @@ export function createTableHandler(elements, onEdit, onDelete) {
         e.target.classList.add('active');
         currentGradeFilter = e.target.dataset.grade;
         
-        // FIXED: Reset other filters when a grade is selected to prevent conflicts
         elements.teacherFilterSelect.value = 'all';
         elements.groupFilterSelect.value = 'all';
 
@@ -81,5 +92,6 @@ export function createTableHandler(elements, onEdit, onDelete) {
         if (deleteBtn) onDelete(deleteBtn.dataset.id);
     });
 
-    return { render, populateGroupFilter, handleGradeFilterClick };
+    // MODIFIED: Expose the new resetFilters function
+    return { render, populateGroupFilter, handleGradeFilterClick, resetFilters };
 }
