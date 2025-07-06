@@ -1,0 +1,90 @@
+<!-- This is a template, not a full HTML page. It will be loaded by JavaScript. -->
+<div id="pdf-report-container" style="padding: 20px; font-family: 'Cairo', sans-serif; direction: rtl;">
+    <!-- We'll load the required font directly in the template -->
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Cairo:wght@400;600;700&display=swap');
+        
+        #pdf-report-container {
+            font-family: 'Cairo', sans-serif;
+            direction: rtl;
+            text-align: right;
+            width: 100%;
+        }
+        .report-header {
+            text-align: center;
+            border-bottom: 2px solid #333;
+            padding-bottom: 10px;
+            margin-bottom: 20px;
+        }
+        .report-header h1 {
+            margin: 0;
+            font-size: 24px;
+            color: #5E35B1; /* Using your primary color */
+        }
+        .report-header p {
+            margin: 5px 0 0;
+            font-size: 12px;
+            color: #757575;
+        }
+        .report-table {
+            width: 100%;
+            border-collapse: collapse;
+        }
+        .report-table th, .report-table td {
+            border: 1px solid #ddd;
+            padding: 8px;
+            text-align: right;
+            vertical-align: middle;
+        }
+        /* Prevents table rows from being cut off between pages */
+        .report-table tr {
+            page-break-inside: avoid;
+        }
+        .report-table th {
+            background-color: #f2f2f2;
+            font-weight: 700;
+            color: #333;
+        }
+        .report-table tr:nth-child(even) {
+            background-color: #f9f9f9;
+        }
+        .report-table .ltr-cell {
+            direction: ltr;
+            text-align: left;
+            font-family: monospace;
+        }
+
+        /* --- DYNAMIC ORIENTATION STYLES --- */
+        .landscape-mode .report-table {
+            font-size: 11px; /* Default size for wider view */
+        }
+        .portrait-mode .report-table {
+            font-size: 9px; /* Smaller font for narrower view */
+        }
+        .portrait-mode .report-table th, .portrait-mode .report-table td {
+            padding: 5px; /* Tighter padding for portrait mode */
+        }
+    </style>
+
+    <div class="report-header">
+        <h1>تقرير الطلاب</h1>
+        <p>تاريخ الطباعة: <span id="report-print-time"></span></p>
+    </div>
+
+    <table class="report-table">
+        <thead>
+            <tr>
+                <th>#</th>
+                <th>اسم الطالب</th>
+                <th>الصف</th>
+                <th>المجموعة والموعد</th>
+                <th class="ltr-cell">رقم الطالب</th>
+                <th class="ltr-cell">رقم ولي الأمر</th>
+                <th>تاريخ التسجيل</th>
+            </tr>
+        </thead>
+        <tbody id="report-table-body">
+            <!-- Student rows will be injected here by JavaScript -->
+        </tbody>
+    </table>
+</div>

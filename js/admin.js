@@ -2,17 +2,27 @@
 import { initializeUpdateModal } from './components/update-modal.js';
 import { initializePageLoader } from './pages/admin/page-loader.js';
 import { supabase, getGradeCounts } from './pages/admin/supabase-client.js';
-import { fetchTeachers } from './services/teacher-service.js'; // ADDED: Import teacher service
-import { setAllStudents, setStudentDetailModal, setDeleteConfirmationModal } from './pages/admin/state.js';
+import { fetchTeachers } from './services/teacher-service.js';
+import { allStudents, currentFilter, setAllStudents, setStudentDetailModal, setDeleteConfirmationModal } from './pages/admin/state.js';
 import { setupEventListeners } from './pages/admin/event-handlers.js';
 import { renderFilterCards } from './pages/admin/filter-cards.js';
 import { applyFilters } from './pages/admin/filters.js';
-import { hideLoading, showToast } from './pages/admin/helpers.js';
+import { hideLoading, showToast, convertTo12HourFormat } from './pages/admin/helpers.js';
+
+// Import the PDF printer feature
+import { initializePdfPrinter } from './features/pdf-printer.js'; 
+
+// Define constants needed by the PDF printer
+const GRADE_NAMES = {
+    'first': 'الصف الأول',
+    'second': 'الصف الثاني',
+    'third': 'الصف الثالث'
+};
 
 // Initialize page loader
 initializePageLoader();
 
-// ADDED: Load teachers and populate filter
+// Load teachers and populate filter
 async function loadTeachers() {
     try {
         const teachers = await fetchTeachers();
@@ -38,13 +48,13 @@ document.addEventListener('DOMContentLoaded', async () => {
     setDeleteConfirmationModal(new bootstrap.Modal(document.getElementById('deleteConfirmationModal')));
 
     try {
-        // NEW: Load initial data more efficiently
+        // Load initial data more efficiently
         const { data, error } = await supabase
             .from('registrations_2025_2026')
             .select(`
                 *,
                 teacher:teachers(id, name)
-            `) // ADDED: Include teacher information
+            `) // Include teacher information
             .order('created_at', { ascending: false })
             .limit(100); // Load first 100 for dropdown options
             
@@ -57,7 +67,7 @@ document.addEventListener('DOMContentLoaded', async () => {
         console.error('Error fetching data:', error);
         showToast('فشل في تحميل البيانات. تأكد من الاتصال بالانترنت.', 'error');
         document.getElementById('students-table-body').innerHTML = 
-            `<tr><td colspan="9" class="p-8 text-center text-red-500">فشل في تحميل البيانات. تأكد من صلاحيات الوصول (RLS).</td></tr>`; // CHANGED: colspan from 8 to 9
+            `<tr><td colspan="9" class="p-8 text-center text-red-500">فشل في تحميل البيانات. تأكد من صلاحيات الوصول (RLS).</td></tr>`;
     } finally {
         hideLoading();
     }
@@ -66,9 +76,17 @@ document.addEventListener('DOMContentLoaded', async () => {
 // Enhanced Dashboard Initialization
 async function initializeDashboard() {
     await Promise.all([
-        loadTeachers(), // ADDED: Load teachers
+        loadTeachers(), // Load teachers
         renderFilterCards(),
         applyFilters()
     ]);
     setupEventListeners();
+
+    // Initialize the PDF printer after the rest of the dashboard is ready
+    initializePdfPrinter(
+        allStudents,            // Pass the student data from state
+        currentFilter,          // Pass the filter object from state
+        GRADE_NAMES,            // Pass the defined grade names constant
+        convertTo12HourFormat   // Pass the helper function for time
+    );
 }
