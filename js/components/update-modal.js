@@ -1,6 +1,7 @@
 // js/components/update-modal.js
 
-const MODAL_ID = 'whatsNewModal_v1'; // Change this version if you have a new update
+// IMPORTANT: Update the modal ID to force it to show for all users again
+const MODAL_ID = 'whatsNewModal_v2'; // Changed from v1 to v2
 const MODAL_COOLDOWN_HOURS = 4; // Cooldown period in hours before showing the modal again
 
 const MODAL_HTML = `
@@ -9,13 +10,21 @@ const MODAL_HTML = `
         <div class="modal-content">
             <div class="modal-header">
                 <h5 class="modal-title" id="whatsNewModalLabel">
-                    <i class="fas fa-sparkles"></i> تحديث جديد في لوحة التحكم!
+                    <i class="fas fa-sparkles"></i> تحديثات جديدة في لوحة التحكم!
                 </h5>
                 <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
             </div>
             <div class="modal-body">
                 <p class="intro-text">تمت إضافة تحسينات جديدة لتسهيل عملك:</p>
                 <div class="feature-list">
+                    <!-- NEW FEATURE ANNOUNCEMENT ADDED HERE -->
+                    <div class="feature-item">
+                        <div class="feature-icon"><i class="fas fa-file-pdf"></i></div>
+                        <div class="feature-text">
+                            <h6>تقارير PDF احترافية</h6>
+                            <p>يمكنك الآن طباعة قوائم الطلاب في ملفات PDF منظمة، مع خيارات لاختيار الاتجاه (أفقي/عمودي) والأعمدة التي تريد عرضها.</p>
+                        </div>
+                    </div>
                     <div class="feature-item">
                         <div class="feature-icon"><i class="fas fa-hand-pointer"></i></div>
                         <div class="feature-text">

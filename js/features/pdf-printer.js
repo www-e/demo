@@ -26,7 +26,7 @@ export function initializePdfPrinter(allStudents, currentFilter, gradeNames, for
  * Creates and injects the "Print to PDF" button and the confirmation modal into the DOM.
  */
 function addPrintButtonAndModal() {
-    // 1. Create and inject the modal HTML with a more guided layout and better icons
+    // 1. Create and inject the modal HTML
     const modalHTML = `
     <div class="modal fade" id="printPdfModal" tabindex="-1" aria-labelledby="printPdfModalLabel" aria-hidden="true">
         <div class="modal-dialog modal-dialog-centered">
@@ -65,7 +65,7 @@ function addPrintButtonAndModal() {
     document.body.insertAdjacentHTML('beforeend', modalHTML);
 
     const printButton = document.createElement('button');
-    printButton.className = 'btn btn-dark'; // Changed for better contrast
+    printButton.className = 'btn btn-dark';
     printButton.innerHTML = '<i class="fas fa-print me-2"></i> طباعة تقرير PDF';
 
     const printModal = new bootstrap.Modal(document.getElementById('printPdfModal'));
@@ -74,7 +74,6 @@ function addPrintButtonAndModal() {
         printModal.show();
     });
 
-    // Pass the event to the handler to identify which button was clicked
     document.getElementById('printCurrentPageBtn').addEventListener('click', (e) => {
         generatePdf('current', e.currentTarget);
         printModal.hide();
@@ -117,10 +116,6 @@ function getFilteredStudents() {
     return filtered;
 }
 
-/**
- * Generates a dynamic filename based on the current filters.
- * @returns {string} The formatted filename.
- */
 function generateDynamicFilename() {
     let name = 'Student-Report';
     if (currentFilterState.grade !== 'all') {
@@ -134,14 +129,7 @@ function generateDynamicFilename() {
     return name;
 }
 
-
-/**
- * The main function to generate and download the PDF.
- * @param {'all' | 'current'} scope - Determines which students to print.
- * @param {HTMLElement} clickedButton - The button that initiated the print.
- */
 async function generatePdf(scope, clickedButton) {
-    // --- UX Improvement: Immediate button feedback ---
     const originalButtonHtml = clickedButton.innerHTML;
     const printBtn1 = document.getElementById('printCurrentPageBtn');
     const printBtn2 = document.getElementById('printAllFilteredBtn');
@@ -176,12 +164,17 @@ async function generatePdf(scope, clickedButton) {
         tableBody.innerHTML = studentsToPrint.map((student, index) => {
             const groupTime = [student.days_group, timeFormatter(student.time_slot)].filter(Boolean).join(' - ') || '—';
             const registrationDate = new Date(student.created_at).toLocaleDateString('ar-EG', { day: '2-digit', month: '2-digit', year: 'numeric'});
+            
+            // CORRECTED LINE: Use optional chaining to safely get the teacher's name
+            const teacherName = student.teacher?.name || '—'; 
+
             return `
                 <tr>
                     <td>${index + 1}</td>
                     <td>${student.student_name}</td>
                     <td>${gradeNamesMap[student.grade] || ''}</td>
                     <td>${groupTime}</td>
+                    <td>${teacherName}</td>
                     <td class="ltr-cell">${student.student_phone}</td>
                     <td class="ltr-cell">${student.parent_phone}</td>
                     <td>${registrationDate}</td>
@@ -197,7 +190,7 @@ async function generatePdf(scope, clickedButton) {
 
         const pdfOptions = {
             margin:       0.5,
-            filename:     generateDynamicFilename(), // UX Improvement: Dynamic filename
+            filename:     generateDynamicFilename(),
             image:        { type: 'jpeg', quality: 0.98 },
             html2canvas:  { scale: 2, useCORS: true, letterRendering: true },
             jsPDF:        { unit: 'in', format: 'a4', orientation: orientation }
@@ -211,7 +204,6 @@ async function generatePdf(scope, clickedButton) {
         console.error('Failed to generate PDF:', error);
         alert('حدث خطأ أثناء إنشاء ملف PDF. يرجى المحاولة مرة أخرى.');
     } finally {
-        // --- UX Improvement: Restore buttons ---
         clickedButton.innerHTML = originalButtonHtml;
         printBtn1.disabled = false;
         printBtn2.disabled = false;
