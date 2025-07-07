@@ -7,12 +7,7 @@ export async function loadSchedulesFromDB() {
     try {
         const { data, error } = await supabase
             .from('schedules')
-            .select(`
-                *,
-            teacher:teachers(id, name),
-            material:materials(id, name),
-            center:centers(id, name)
-            `)
+            .select('*,teacher:teachers(id,name),material:materials(id,name)')
             .eq('is_active', true);
         if (error) throw error;
         allSchedules = data;

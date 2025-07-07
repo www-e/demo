@@ -18,6 +18,29 @@ const convertTo12HourFormat = (time24) => {
         timeZone: 'UTC'
     });
 };
+// Add this function to js/main.js (place it before the DOMContentLoaded event)
+async function loadTeachersAndMaterials() {
+    try {
+        // Load teachers
+        const teachers = await fetchTeachers();
+        populateTeacherSelect(teachers);
+        
+        // Load materials  
+        const materials = await fetchMaterials();
+        populateMaterialSelect(materials);
+        
+        // Load centers
+        const centers = await fetchCenters();
+        populateCenterSelect(centers);
+        
+        // Load schedules for the form
+        await loadSchedulesFromDB();
+        
+    } catch (error) {
+        console.error('Error loading initial data:', error);
+        showToast('خطأ في تحميل البيانات الأولية: ' + error.message, 'error');
+    }
+}
 
 document.addEventListener('DOMContentLoaded', async () => {
     const form = document.getElementById('registrationForm');
@@ -46,7 +69,7 @@ document.addEventListener('DOMContentLoaded', async () => {
     // MODIFIED: Load both schedules and teachers
     await Promise.all([
         loadSchedulesFromDB(),
-        loadTeachers(),
+        await loadTeachersAndMaterials(),// Call the correct function name
         loadMaterials(), // ADDED: Load materials
         loadCenters() // ADDED: Load centers
     ]);
@@ -152,8 +175,8 @@ document.addEventListener('DOMContentLoaded', async () => {
                     groupName: registrationData.days_group,
                     timeName: convertTo12HourFormat(registrationData.time_slot),
                     teacherName: selectedTeacher, // ADDED: Include teacher name
-                    materialName: selectedMaterial, // ADDED: Include material name
-                    centerName: selectedCenter // ADDED: Include center name
+                    materialName: await getMaterialName(registrationData.material_id),
+                    centerName: await getCenterName(registrationData.center_id)                    
                 });
                 
                 form.reset();

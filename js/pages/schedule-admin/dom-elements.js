@@ -9,7 +9,7 @@ export const elements = {
     groupNameCustomInput: document.getElementById('group_name_custom'),
     saveBtn: document.getElementById('saveBtn'),
     cancelBtn: document.getElementById('cancelBtn'),
-    tableBody: document.getElementById('schedulesTableBody'),
+    tableBody: document.querySelector('#schedulesTable tbody') || document.getElementById('tableBody'),
     mobileCardView: document.getElementById('mobileCardView'),
     loader: document.getElementById('loader'),
     schedulesTableContainer: document.getElementById('schedulesTableContainer'),
