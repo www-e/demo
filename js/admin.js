@@ -10,7 +10,7 @@ import { hideLoading, showToast, convertTo12HourFormat } from './pages/admin/hel
 import { fetchMaterials } from './services/material-service.js';
 import { fetchTeachers } from './services/teacher-service.js';
 import { fetchCenters } from './services/center-service.js';
-import { initializePdfPrinter } from '../features/pdf-printer.js';
+import { initializePdfPrinter } from './features/pdf-printer.js';
 import { GRADE_NAMES } from './pages/admin/constants.js';
 
 initializePageLoader();

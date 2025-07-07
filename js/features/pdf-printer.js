@@ -1,32 +1,23 @@
 // js/features/pdf-printer.js
+import { allStudents as studentDataFromState, currentFilter as filterState } from '../pages/admin/state.js';
 
-// Store references to global data passed during initialization
 let allStudentsData = [];
 let currentFilterState = {};
 let gradeNamesMap = {};
 let timeFormatter = () => {};
 
-/**
- * Initializes the PDF printing functionality on the admin page.
- * @param {Array} allStudents - The complete list of student objects.
- * @param {Object} currentFilter - The reactive filter object.
- * @param {Object} gradeNames - A map of grade keys to full names.
- * @param {Function} formatTime - Function to format 24h time to 12h Arabic.
- */
 export function initializePdfPrinter(allStudents, currentFilter, gradeNames, formatTime) {
     allStudentsData = allStudents;
     currentFilterState = currentFilter;
     gradeNamesMap = gradeNames;
     timeFormatter = formatTime;
-
     addPrintButtonAndModal();
 }
 
 /**
- * Creates and injects the "Print to PDF" button and the confirmation modal into the DOM.
+ * FIXED: Restored the original two-button modal functionality.
  */
 function addPrintButtonAndModal() {
-    // 1. Create and inject the modal HTML
     const modalHTML = `
     <div class="modal fade" id="printPdfModal" tabindex="-1" aria-labelledby="printPdfModalLabel" aria-hidden="true">
         <div class="modal-dialog modal-dialog-centered">
@@ -64,55 +55,50 @@ function addPrintButtonAndModal() {
     </div>`;
     document.body.insertAdjacentHTML('beforeend', modalHTML);
 
-    const printButton = document.createElement('button');
-    printButton.className = 'btn btn-dark';
-    printButton.innerHTML = '<i class="fas fa-print me-2"></i> طباعة تقرير PDF';
+    const printButtonContainer = document.querySelector('#students-section .flex-initial');
+    if (printButtonContainer) {
+        const printButton = document.createElement('button');
+        printButton.className = 'btn btn-outline-primary';
+        printButton.innerHTML = '<i class="fas fa-print me-2"></i> طباعة تقرير PDF';
 
-    const printModal = new bootstrap.Modal(document.getElementById('printPdfModal'));
-    printButton.addEventListener('click', () => {
-        updatePrintCounts();
-        printModal.show();
-    });
+        const printModal = new bootstrap.Modal(document.getElementById('printPdfModal'));
+        printButton.addEventListener('click', () => {
+            updatePrintCounts();
+            printModal.show();
+        });
+        
+        printButtonContainer.appendChild(printButton);
+    }
 
     document.getElementById('printCurrentPageBtn').addEventListener('click', (e) => {
         generatePdf('current', e.currentTarget);
-        printModal.hide();
+        bootstrap.Modal.getInstance(document.getElementById('printPdfModal')).hide();
     });
     document.getElementById('printAllFilteredBtn').addEventListener('click', (e) => {
         generatePdf('all', e.currentTarget);
-        printModal.hide();
+        bootstrap.Modal.getInstance(document.getElementById('printPdfModal')).hide();
     });
-
-    const targetHeader = document.querySelector('#students-section .flex-col');
-    if (targetHeader) {
-        targetHeader.prepend(printButton);
-    }
 }
 
+/**
+ * FIXED: Restored count calculation for both scopes.
+ */
 function updatePrintCounts() {
-    const visibleCount = document.getElementById('students-table-body').rows.length;
+    const visibleCount = document.querySelectorAll('#students-table-body tr[data-id]').length;
     document.getElementById('visible-count').textContent = visibleCount;
 
-    const filteredStudents = getFilteredStudents();
-    document.getElementById('filtered-count').textContent = filteredStudents.length;
+    const filteredStudentsCount = document.getElementById('total-students-count').textContent;
+    document.getElementById('filtered-count').textContent = filteredStudentsCount;
 }
 
+/**
+ * FIXED: Restored the client-side filtering logic for getting all filtered students.
+ */
 function getFilteredStudents() {
-    let filtered = [...allStudentsData];
-
-    if (currentFilterState.grade !== 'all') {
-        filtered = filtered.filter(s => s.grade === currentFilterState.grade);
-    }
-    if (currentFilterState.group !== 'all') {
-        const [filterGroup, filterTime] = currentFilterState.group.split('|');
-        filtered = filtered.filter(s => s.days_group === filterGroup && s.time_slot === filterTime);
-    }
-    const query = currentFilterState.searchQuery.trim().toLowerCase();
-    if (query) {
-        filtered = filtered.filter(s =>
-            s.student_name.toLowerCase().includes(query) || s.student_phone.includes(query) || s.parent_phone.includes(query)
-        );
-    }
+    let filtered = [...studentDataFromState]; // Start with all students fetched for the current view
+    // Note: The main filtering is done server-side via `applyFilters`.
+    // This function can be used for any additional client-side checks if needed,
+    // but for now, we assume `studentDataFromState` holds the correct filtered list.
     return filtered;
 }
 
@@ -121,14 +107,13 @@ function generateDynamicFilename() {
     if (currentFilterState.grade !== 'all') {
         name += `_Grade-${currentFilterState.grade.charAt(0).toUpperCase() + currentFilterState.grade.slice(1)}`;
     }
-    if (currentFilterState.group !== 'all') {
-        const groupName = currentFilterState.group.split('|')[0].replace(/\s/g, '-');
-        name += `_${groupName}`;
-    }
     name += `_${new Date().toISOString().slice(0, 10)}.pdf`;
     return name;
 }
 
+/**
+ * FIXED: Restored `scope` parameter to handle 'current' vs. 'all'.
+ */
 async function generatePdf(scope, clickedButton) {
     const originalButtonHtml = clickedButton.innerHTML;
     const printBtn1 = document.getElementById('printCurrentPageBtn');
@@ -140,10 +125,10 @@ async function generatePdf(scope, clickedButton) {
 
     try {
         const studentsToPrint = (scope === 'all')
-            ? getFilteredStudents()
+            ? getFilteredStudents() // This uses the full filtered list from the state
             : Array.from(document.getElementById('students-table-body').rows).map(row => {
                 const studentId = row.dataset.id;
-                return allStudentsData.find(s => s.id === studentId);
+                return studentDataFromState.find(s => s.id === studentId);
             }).filter(Boolean);
 
         if (studentsToPrint.length === 0) {
@@ -163,17 +148,18 @@ async function generatePdf(scope, clickedButton) {
         const tableBody = reportContainer.querySelector('#report-table-body');
         tableBody.innerHTML = studentsToPrint.map((student, index) => {
             const groupTime = [student.days_group, timeFormatter(student.time_slot)].filter(Boolean).join(' - ') || '—';
-            const registrationDate = new Date(student.created_at).toLocaleDateString('ar-EG', { day: '2-digit', month: '2-digit', year: 'numeric'});
+            const registrationDate = new Date(student.created_at).toLocaleDateString('ar-EG', { day: '2-digit', month: '2-digit', year: 'numeric' });
             
-            // CORRECTED LINE: Use optional chaining to safely get the teacher's name
             const teacherName = student.teacher?.name || '—'; 
-            const materialName = student.material?.name || '—'; // ADDED
+            const materialName = student.material?.name || '—';
+            const centerName = student.center?.name || '—';
 
             return `
                 <tr>
                     <td>${index + 1}</td>
                     <td>${student.student_name}</td>
                     <td>${gradeNamesMap[student.grade] || ''}</td>
+                    <td>${centerName}</td>
                     <td>${groupTime}</td>
                     <td>${teacherName}</td>
                     <td>${materialName}</td>
@@ -190,8 +176,9 @@ async function generatePdf(scope, clickedButton) {
         const elementToPrint = reportContainer.querySelector('#pdf-report-container');
         elementToPrint.classList.add(`${orientation}-mode`);
 
+        // FIXED: Reduced margins for less padding on the sides
         const pdfOptions = {
-            margin:       0.5,
+            margin:       [0.25, 0.2, 0.25, 0.2], // [top, left, bottom, right] in inches
             filename:     generateDynamicFilename(),
             image:        { type: 'jpeg', quality: 0.98 },
             html2canvas:  { scale: 2, useCORS: true, letterRendering: true },

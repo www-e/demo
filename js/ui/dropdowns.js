@@ -35,7 +35,6 @@ function createDropdown(selectElement) {
             dropdownOption.className = 'dropdown-option';
             dropdownOption.dataset.value = option.value;
             
-            // Simplified to only show the text content
             dropdownOption.textContent = option.textContent;
 
             dropdownOption.addEventListener('click', e => {
@@ -73,19 +72,32 @@ export function initDropdowns() {
     document.addEventListener('keydown', e => e.key === 'Escape' && closeAllDropdowns());
 }
 
-// The function is now simplified, the 'isTimeSelect' logic is removed.
+// FIXED: This function now correctly syncs the display text with the select's current value.
 export function updateSelectOptions(select, options, placeholder) {
+    const currentValue = select.value; // Store the current value before clearing
     select.innerHTML = `<option value="">${placeholder}</option>`;
+    
+    let isCurrentValueStillValid = false;
     options.forEach(opt => {
         const option = document.createElement('option');
         option.value = opt.value;
         option.textContent = opt.text;
         select.appendChild(option);
+        if (opt.value === currentValue) {
+            isCurrentValueStillValid = true;
+        }
     });
-    select.dispatchEvent(new Event('update'));
 
+    // Restore the value if it's still a valid option, otherwise reset.
+    select.value = isCurrentValueStillValid ? currentValue : "";
+
+    // Now, update the custom display to match the real select's state.
     const customSelected = select.parentElement.querySelector('.selected-option');
     if (customSelected) {
-        customSelected.textContent = placeholder;
+        // Find the text of the selected option in the real select
+        const selectedIndex = select.selectedIndex > -1 ? select.selectedIndex : 0;
+        customSelected.textContent = select.options[selectedIndex].textContent;
     }
+
+    select.dispatchEvent(new Event('update'));
 }

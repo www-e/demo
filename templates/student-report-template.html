@@ -8,14 +8,26 @@
         .report-header h1 { margin: 0; font-size: 24px; color: #5E35B1; }
         .report-header p { margin: 5px 0 0; font-size: 12px; color: #757575; }
         .report-table { width: 100%; border-collapse: collapse; }
-        .report-table th, .report-table td { border: 1px solid #ddd; padding: 8px; text-align: right; vertical-align: middle; }
+        .report-table th, .report-table td {
+            border: 1px solid #ddd;
+            /* FIXED: Reduced left/right padding */
+            padding: 8px 4px; 
+            text-align: right;
+            vertical-align: middle;
+        }
+        .report-table td {
+            /* FIXED: Made data text bolder */
+            font-weight: 600; 
+        }
         .report-table tr { page-break-inside: avoid; }
         .report-table th { background-color: #f2f2f2; font-weight: 700; color: #333; }
         .report-table tr:nth-child(even) { background-color: #f9f9f9; }
         .report-table .ltr-cell { direction: ltr; text-align: left; font-family: monospace; }
-        .landscape-mode .report-table { font-size: 10px; } /* Adjusted font size */
-        .portrait-mode .report-table { font-size: 8px; } /* Adjusted font size */
-        .portrait-mode .report-table th, .portrait-mode .report-table td { padding: 4px; }
+
+        /* --- DYNAMIC ORIENTATION STYLES --- */
+        .landscape-mode .report-table { font-size: 10px; } /* Adjusted for better fit */
+        .portrait-mode .report-table { font-size: 8px; }
+        .portrait-mode .report-table th, .portrait-mode .report-table td { padding: 5px 3px; }
     </style>
 
     <div class="report-header">
@@ -29,7 +41,7 @@
                 <th>#</th>
                 <th>اسم الطالب</th>
                 <th>الصف</th>
-                <th>المركز</th> <!-- ADDED -->
+                <th>المركز</th>
                 <th>المجموعة والموعد</th>
                 <th>المدرس</th>
                 <th>المادة</th>

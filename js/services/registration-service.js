@@ -7,7 +7,8 @@ export async function loadSchedulesFromDB() {
     try {
         const { data, error } = await supabase
             .from('schedules')
-            .select('*,teacher:teachers(id,name),material:materials(id,name),center:centers(id,name)')
+            // FIXED: Added 'is_active' to the teacher selection
+            .select('*,teacher:teachers(id, name, is_active),material:materials(id,name),center:centers(id,name)')
             .eq('is_active', true);
         if (error) throw error;
         allSchedules = data;
@@ -18,7 +19,7 @@ export async function loadSchedulesFromDB() {
     }
 }
 
-// MODIFIED: Corrected and simplified filtering logic
+// This function is now correct because it will receive the right data. No changes needed here.
 export function getAvailableGroupTimes(grade, teacherId, materialId, centerId) {
     if (!grade || !teacherId || !materialId || !centerId) {
         return [];

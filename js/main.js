@@ -10,7 +10,6 @@ import { validateForm, initRealtimeValidation } from './validation.js';
 
 let allSchedules = [];
 
-// Helper to format 24-hour time to 12-hour Arabic format
 const convertTo12HourFormat = (time24) => {
     if (!time24) return 'غير محدد';
     return new Date(`1970-01-01T${time24}Z`).toLocaleTimeString('ar-EG', {
@@ -25,7 +24,6 @@ document.addEventListener('DOMContentLoaded', async () => {
     const form = document.getElementById('registrationForm');
     if (!form) return;
 
-    // --- DOM Elements ---
     const gradeSelect = form.querySelector('#grade');
     const teacherSelect = form.querySelector('#teacher');
     const materialSelect = form.querySelector('#material');
@@ -43,7 +41,6 @@ document.addEventListener('DOMContentLoaded', async () => {
     initDropdowns();
     initRealtimeValidation(form);
     
-    // --- Initial Data Loading ---
     try {
         const [schedules, teachers, materials, centers] = await Promise.all([
             loadSchedulesFromDB(),
@@ -55,7 +52,6 @@ document.addEventListener('DOMContentLoaded', async () => {
         allSchedules = schedules;
         
         updateSelectOptions(centerSelect, centers.map(c => ({ value: c.id, text: c.name })), 'اختر المركز');
-        // The other dropdowns will be populated by our new smart function
         updateAvailableOptions();
 
     } catch (error) {
@@ -65,50 +61,36 @@ document.addEventListener('DOMContentLoaded', async () => {
     
     console.log("Schedules and dropdown data loaded and ready.");
 
-    // --- NEW: Smart Dropdown Logic ---
     function updateAvailableOptions() {
-        const selectedCenter = centerSelect.value;
-        const selectedMaterial = materialSelect.value;
-        const selectedTeacher = teacherSelect.value;
-        const selectedGrade = gradeSelect.value;
-
         let available = allSchedules;
 
-        // 1. Filter Materials based on selected Center
-        if (selectedCenter) {
-            available = available.filter(s => s.center_id === selectedCenter);
+        if (centerSelect.value) {
+            available = available.filter(s => s.center_id === centerSelect.value);
         }
         const materialOptions = [...new Map(available.map(s => [s.material.id, s.material])).values()]
             .map(m => ({ value: m.id, text: m.name }));
         updateSelectOptions(materialSelect, materialOptions, 'اختر المادة');
-        materialSelect.value = selectedMaterial; // Restore selection if still valid
 
-        // 2. Filter Teachers based on Center and Material
-        if (selectedMaterial) {
-            available = available.filter(s => s.material_id === selectedMaterial);
+        if (materialSelect.value) {
+            available = available.filter(s => s.material_id === materialSelect.value);
         }
         const teacherOptions = [...new Map(available.map(s => [s.teacher.id, s.teacher])).values()]
-            .filter(t => t.is_active) // Only show active teachers
+            .filter(t => t.is_active)
             .map(t => ({ value: t.id, text: t.name }));
         updateSelectOptions(teacherSelect, teacherOptions, 'اختر المدرس');
-        teacherSelect.value = selectedTeacher; // Restore selection
 
-        // 3. Filter Grades based on previous selections
-        if (selectedTeacher) {
-            available = available.filter(s => s.teacher_id === selectedTeacher);
+        if (teacherSelect.value) {
+            available = available.filter(s => s.teacher_id === teacherSelect.value);
         }
         const gradeOptions = [...new Set(available.map(s => s.grade))].map(g => ({
             value: g,
             text: GRADE_NAMES[g]
         }));
         updateSelectOptions(gradeSelect, gradeOptions, 'اختر الصف');
-        gradeSelect.value = selectedGrade; // Restore selection
 
-        // 4. Finally, populate Group/Time based on ALL previous selections
-        if (selectedGrade) {
-            available = available.filter(s => s.grade === selectedGrade);
+        if (gradeSelect.value) {
+            available = available.filter(s => s.grade === gradeSelect.value);
         }
-
         const groupTimeOptions = available.map(s => ({
             value: `${s.group_name}|${s.time_slot}`,
             text: `${s.group_name} - ${convertTo12HourFormat(s.time_slot)}`
@@ -118,7 +100,6 @@ document.addEventListener('DOMContentLoaded', async () => {
         groupTimeSelect.disabled = !groupTimeOptions.length;
     }
 
-    // --- Event Listeners ---
     centerSelect.addEventListener('change', updateAvailableOptions);
     materialSelect.addEventListener('change', updateAvailableOptions);
     teacherSelect.addEventListener('change', updateAvailableOptions);
@@ -127,11 +108,9 @@ document.addEventListener('DOMContentLoaded', async () => {
     form.addEventListener('submit', async (e) => {
         e.preventDefault();
 
-        // FIXED: Handle 400 Bad Request by validating group_time selection first
         const formData = new FormData(form);
         if (!formData.get('group_time')) {
             alert('يرجى اختيار مجموعة وموعد قبل التسجيل.');
-            // Highlight the group/time dropdown
             const groupTimeContainer = document.getElementById('groupTimeContainer');
             groupTimeContainer.querySelector('.selected-option')?.classList.add('invalid');
             return;
@@ -174,7 +153,7 @@ document.addEventListener('DOMContentLoaded', async () => {
                 });
                 
                 form.reset();
-                initDropdowns(); 
+                initDropdowns();
                 updateAvailableOptions();
                 document.querySelectorAll('.invalid').forEach(el => el.classList.remove('invalid'));
 
