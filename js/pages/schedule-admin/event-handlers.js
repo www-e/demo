@@ -1,7 +1,7 @@
 // js/pages/schedule-admin/event-handlers.js
 import { showConfirmation, showToast } from './ui-helpers.js';
 import * as ScheduleService from '../../services/schedule-service.js';
-import { deleteAndReassignStudents } from '../../services/teacher-service.js';
+import { deleteAndReassign as deleteAndReassignTeacher } from '../../services/teacher-service.js';
 import { deleteAndReassignMaterial } from '../../services/material-service.js';
 
 export function createEventHandlers({ elements, state, timeBuilder, teacherModal, materialModal, formManager, loadAndRenderAllData }) {
@@ -13,10 +13,11 @@ export function createEventHandlers({ elements, state, timeBuilder, teacherModal
             confirmText: 'نعم، ابدأ', btnClass: 'btn-info',
             onConfirm: () => {
                 state.setEditingGroup(dataset);
-                const { grade, group, teacher, material } = dataset;
+                const { grade, group, teacher, material, center } = dataset;
                 const groupSchedules = state.getSchedules().filter(s => 
                     s.grade === grade && 
-                    s.group_name === group && 
+                    s.group_name === group &&
+                    s.center_id === center &&
                     (s.teacher_id === teacher || (s.teacher_id === null && !teacher)) &&
                     (s.material_id === material || (s.material_id === null && !material))
                 );
@@ -25,6 +26,7 @@ export function createEventHandlers({ elements, state, timeBuilder, teacherModal
                 elements.gradeSelect.value = grade;
                 elements.teacherSelect.value = teacher || '';
                 elements.materialSelect.value = material || '';
+                elements.centerSelect.value = center || '';
                 
                 const standardGroup = Array.from(elements.groupNameSelect.options).find(opt => opt.value === group);
                 elements.groupNameSelect.value = standardGroup ? group : 'custom';
@@ -64,9 +66,10 @@ export function createEventHandlers({ elements, state, timeBuilder, teacherModal
         const timeSlots = timeBuilder.getTimes();
         const teacherId = elements.teacherSelect.value || null;
         const materialId = elements.materialSelect.value || null;
+        const centerId = elements.centerSelect.value || null; // ADDED
         
-        if (!elements.gradeSelect.value || !groupName || timeSlots.length === 0) {
-            return showToast('يرجى ملء جميع الحقول.', 'error');
+        if (!elements.gradeSelect.value || !groupName || timeSlots.length === 0 || !centerId) {
+            return showToast('يرجى ملء جميع الحقول (المركز، الصف، المادة، المدرس، المجموعة، والمواعيد).', 'error');
         }
 
         showConfirmation({
@@ -80,17 +83,18 @@ export function createEventHandlers({ elements, state, timeBuilder, teacherModal
                     group_name: groupName, 
                     time_slot: time,
                     teacher_id: teacherId,
-                    material_id: materialId
+                    material_id: materialId,
+                    center_id: centerId // ADDED
                 }));
                 
                 try {
                     const isEditing = !!state.getEditingGroup();
-                    await ScheduleService.saveScheduleWithTeacherAndMaterial(records, isEditing, state.getEditingGroup());
+                    await ScheduleService.saveSchedule(records, isEditing, state.getEditingGroup());
                     showToast(isEditing ? 'تم تعديل المجموعة!' : 'تمت إضافة المجموعة!', 'success');
                     formManager.resetForm(state.setEditingGroup);
                     await loadAndRenderAllData();
                 } catch (error) { 
-                    showToast(error.code === '23505' ? 'خطأ: أحد هذه المواعيد موجود بالفعل.' : 'حدث خطأ: ' + error.message, 'error'); 
+                    showToast(error.message.includes('unique_schedule_time') ? 'خطأ: أحد هذه المواعيد موجود بالفعل بنفس المواصفات.' : 'حدث خطأ: ' + error.message, 'error'); 
                 }
             }
         });
@@ -102,6 +106,7 @@ export function createEventHandlers({ elements, state, timeBuilder, teacherModal
 
     function setupTeacherModalListeners() {
         teacherModal.onSaved(async () => {
+            teacherModal.hide();
             await loadAndRenderAllData();
         });
 
@@ -115,7 +120,7 @@ export function createEventHandlers({ elements, state, timeBuilder, teacherModal
                 btnClass: 'btn-danger',
                 onConfirm: async () => {
                     try {
-                        await deleteAndReassignStudents(teacher.id);
+                        await deleteAndReassignTeacher(teacher.id);
                         showToast('تم حذف المدرس ونقل الطلاب والمجموعات بنجاح.', 'success');
                         await loadAndRenderAllData();
                     } catch (error) {
@@ -132,6 +137,7 @@ export function createEventHandlers({ elements, state, timeBuilder, teacherModal
 
     function setupMaterialModalListeners() {
         materialModal.onSaved(async () => {
+            materialModal.hide();
             await loadAndRenderAllData();
         });
 

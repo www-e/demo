@@ -1,9 +1,9 @@
 // js/main.js
 import { GRADE_NAMES } from './config.js';
 import { getAvailableGroupTimes, submitRegistration, loadSchedulesFromDB } from './services/registration-service.js';
-import { fetchTeachers } from './services/teacher-service.js'; // ADDED: Import teacher service
-import { fetchMaterials } from './services/material-service.js'; // ADDED: Import material service
-import { fetchCenters } from './services/center-service.js'; // ADDED: Import center service
+import { fetchTeachers } from './services/teacher-service.js';
+import { fetchMaterials } from './services/material-service.js';
+import { fetchCenters } from './services/center-service.js';
 import { initDropdowns, updateSelectOptions } from './ui/dropdowns.js';
 import { SuccessModal, ThirdGradeModal, RestrictedGroupsModal, DuplicateRegistrationModal } from './ui/modals.js';
 import { validateForm, initRealtimeValidation } from './validation.js';
@@ -18,29 +18,6 @@ const convertTo12HourFormat = (time24) => {
         timeZone: 'UTC'
     });
 };
-// Add this function to js/main.js (place it before the DOMContentLoaded event)
-async function loadTeachersAndMaterials() {
-    try {
-        // Load teachers
-        const teachers = await fetchTeachers();
-        populateTeacherSelect(teachers);
-        
-        // Load materials  
-        const materials = await fetchMaterials();
-        populateMaterialSelect(materials);
-        
-        // Load centers
-        const centers = await fetchCenters();
-        populateCenterSelect(centers);
-        
-        // Load schedules for the form
-        await loadSchedulesFromDB();
-        
-    } catch (error) {
-        console.error('Error loading initial data:', error);
-        showToast('خطأ في تحميل البيانات الأولية: ' + error.message, 'error');
-    }
-}
 
 document.addEventListener('DOMContentLoaded', async () => {
     const form = document.getElementById('registrationForm');
@@ -48,9 +25,9 @@ document.addEventListener('DOMContentLoaded', async () => {
 
     // --- DOM Elements ---
     const gradeSelect = form.querySelector('#grade');
-    const teacherSelect = form.querySelector('#teacher'); // ADDED: Teacher select element
-    const materialSelect = form.querySelector('#material'); // ADDED: Material select element
-    const centerSelect = form.querySelector('#center'); // ADDED: Center select element
+    const teacherSelect = form.querySelector('#teacher');
+    const materialSelect = form.querySelector('#material');
+    const centerSelect = form.querySelector('#center');
     const groupTimeSelect = form.querySelector('#groupTime');
     const submitBtn = form.querySelector('.submit-btn');
 
@@ -66,40 +43,27 @@ document.addEventListener('DOMContentLoaded', async () => {
     initDropdowns();
     initRealtimeValidation(form);
     
-    // MODIFIED: Load both schedules and teachers
-    await Promise.all([
-        loadSchedulesFromDB(),
-        await loadTeachersAndMaterials(),// Call the correct function name
-        loadMaterials(), // ADDED: Load materials
-        loadCenters() // ADDED: Load centers
-    ]);
+    // --- Initial Data Loading ---
+    try {
+        // Load all data concurrently for faster page load
+        const [schedules, teachers, materials, centers] = await Promise.all([
+            loadSchedulesFromDB(),
+            fetchTeachers(),
+            fetchMaterials(),
+            fetchCenters()
+        ]);
+        
+        // Populate dropdowns with the fetched data
+        updateSelectOptions(teacherSelect, teachers.filter(t => t.is_active).map(t => ({ value: t.id, text: t.name })), 'اختر المدرس');
+        updateSelectOptions(materialSelect, materials.map(m => ({ value: m.id, text: m.name })), 'اختر المادة');
+        updateSelectOptions(centerSelect, centers.map(c => ({ value: c.id, text: c.name })), 'اختر المركز');
+
+    } catch (error) {
+        console.error('Error loading initial data:', error);
+        alert('حدث خطأ في تحميل البيانات الأساسية. يرجى تحديث الصفحة.');
+    }
     
-    console.log("Schedules and teachers loaded and ready.");
-
-    // ADDED: Load Teachers function
-    async function loadMaterials() {
-        try {
-            const materials = await fetchMaterials();
-            updateSelectOptions(materialSelect, materials.map(material => ({
-                value: material.id,
-                text: material.name 
-            })), 'اختر المادة');
-        } catch (error) {
-            console.error('Error loading materials:', error);
-        }
-    }
-
-    async function loadCenters() {
-        try {
-            const centers = await fetchCenters();
-            updateSelectOptions(centerSelect, centers.map(center => ({
-                value: center.id,
-                text: center.name 
-            })), 'اختر المركز');
-        } catch (error) {
-            console.error('Error loading centers:', error);
-        }
-    }
+    console.log("Schedules and dropdown data loaded and ready.");
 
     // --- Event Listeners & Logic ---
     gradeSelect.addEventListener('change', () => {
@@ -109,34 +73,24 @@ document.addEventListener('DOMContentLoaded', async () => {
         updateGroupTimeOptions();
     });
 
-    // ADDED: Teacher select change event
-    centerSelect.addEventListener('change', () => {
-        updateGroupTimeOptions();
-    });
+    teacherSelect.addEventListener('change', updateGroupTimeOptions);
+    materialSelect.addEventListener('change', updateGroupTimeOptions);
+    centerSelect.addEventListener('change', updateGroupTimeOptions);
 
-    materialSelect.addEventListener('change', () => {
-        updateGroupTimeOptions();
-    });
-
-    // MODIFIED: Updated to include teacher filter
     function updateGroupTimeOptions() {
         const grade = gradeSelect.value;
         const teacherId = teacherSelect.value;
-        const materialId = materialSelect.value; // ADDED
-        const centerId = centerSelect.value; // ADDED
-        const groupTimes = getAvailableGroupTimes(grade, teacherId, materialId, centerId); // MODIFIED
+        const materialId = materialSelect.value;
+        const centerId = centerSelect.value;
+        const groupTimes = getAvailableGroupTimes(grade, teacherId, materialId, centerId);
         
-        // FIXED: `getAvailableGroupTimes` already returns the correct format.
-        // No need to re-map the array. This fixes the empty/white dropdown issue.
         updateSelectOptions(groupTimeSelect, groupTimes, 'اختر المجموعة والموعد');
-        
         groupTimeSelect.disabled = !groupTimes.length;
     }
 
     form.addEventListener('submit', async (e) => {
         e.preventDefault();
 
-        // Form validation check
         const isFormValid = validateForm(form);
         if (!isFormValid) {
             console.log("Validation failed. Form submission stopped.");
@@ -157,8 +111,8 @@ document.addEventListener('DOMContentLoaded', async () => {
                 parent_phone: formData.get('parent_phone'),
                 grade: formData.get('grade'),
                 teacher_id: formData.get('teacher'),
-                material_id: formData.get('material'), // ADDED
-                center_id: formData.get('center'), // ADDED
+                material_id: formData.get('material'),
+                center_id: formData.get('center'),
                 days_group: days_group,
                 time_slot: time_slot
             };
@@ -166,23 +120,24 @@ document.addEventListener('DOMContentLoaded', async () => {
             const result = await submitRegistration(registrationData);
 
             if (result.success) {
-                // ADDED: Get teacher name for display
-                const selectedTeacher = await getTeacherName(registrationData.teacher_id);
+                const selectedTeacher = teacherSelect.options[teacherSelect.selectedIndex].text;
+                const selectedMaterial = materialSelect.options[materialSelect.selectedIndex].text;
+                const selectedCenter = centerSelect.options[centerSelect.selectedIndex].text;
                 
                 modals.success.show({
                     studentName: registrationData.student_name,
                     gradeName: GRADE_NAMES[registrationData.grade],
                     groupName: registrationData.days_group,
                     timeName: convertTo12HourFormat(registrationData.time_slot),
-                    teacherName: selectedTeacher, // ADDED: Include teacher name
-                    materialName: await getMaterialName(registrationData.material_id),
-                    centerName: await getCenterName(registrationData.center_id)                    
+                    teacherName: selectedTeacher,
+                    materialName: selectedMaterial,
+                    centerName: selectedCenter
                 });
                 
                 form.reset();
+                initDropdowns(); // Re-initialize dropdowns to reset their display text
                 updateGroupTimeOptions(); 
                 
-                // Clear validation states
                 document.querySelectorAll('.invalid').forEach(el => el.classList.remove('invalid'));
                 document.querySelectorAll('.validation-message').forEach(el => el.style.display = 'none');
 
@@ -193,7 +148,8 @@ document.addEventListener('DOMContentLoaded', async () => {
                     modals.restricted.show();
                 }
             }
-        } catch (error) {
+        } catch (error)
+        {
             console.error('Submission failed:', error);
             alert('حدث خطأ غير متوقع. يرجى المحاولة مرة أخرى.');
         } finally {
@@ -201,37 +157,6 @@ document.addEventListener('DOMContentLoaded', async () => {
             submitBtn.innerHTML = '<i class="fas fa-paper-plane ms-2"></i> تسجيل';
         }
     });
-
-    // ADDED: Helper function to get teacher name
-    async function getTeacherName(teacherId) {
-        try {
-            const teachers = await fetchTeachers();
-            const teacher = teachers.find(t => t.id === teacherId);
-            return teacher ? teacher.name : 'غير محدد';
-        } catch (error) {
-            return 'غير محدد';
-        }
-    }
-
-    async function getMaterialName(materialId) {
-        try {
-            const materials = await fetchMaterials();
-            const material = materials.find(m => m.id === materialId);
-            return material ? material.name : 'غير محدد';
-        } catch (error) {
-            return 'غير محدد';
-        }
-    }
-
-    async function getCenterName(centerId) {
-        try {
-            const centers = await fetchCenters();
-            const center = centers.find(c => c.id === centerId);
-            return center ? center.name : 'غير محدد';
-        } catch (error) {
-            return 'غير محدد';
-        }
-    }
 
     // Initial population
     updateGroupTimeOptions();

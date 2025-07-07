@@ -26,6 +26,7 @@
             <nav class="app-bar-nav">
                 <a href="admin.html" class="nav-link-item"><i class="fas fa-users"></i> <span>بيانات الطلاب</span></a>
                 <a href="schedule-admin.html" class="nav-link-item active"><i class="fas fa-calendar-alt"></i> <span>إدارة المواعيد</span></a>
+                <a href="centers.html" class="nav-link-item"><i class="fas fa-building"></i> <span>إدارة المراكز</span></a>
             </nav>
         </div>
     </header>
@@ -40,45 +41,42 @@
             <div class="form-card" id="formCard">
                 <h2 id="formTitle">إضافة مجموعة جديدة</h2>
                 <form id="scheduleForm">
-                    <input type="hidden" id="scheduleId">
-                    <div class="row">
-                        <div class="col-md-6 col-lg-4">
-                            <div class="form-group">
-                                <label for="grade">الصف الدراسي</label>
-                                <select id="grade" class="form-select" required></select>
+                    <div class="row g-3">
+                        <div class="col-md-6 col-lg-3">
+                            <label for="center" class="form-label">المركز</label>
+                            <div class="d-flex gap-2">
+                                <select id="center" class="form-select" required></select>
                             </div>
                         </div>
                         <div class="col-md-6 col-lg-3">
-                            <div class="form-group">
-                                <label for="teacher">المدرس</label>
-                                <div class="d-flex gap-2">
-                                    <select id="teacher" class="form-select"></select>
-                                    <button type="button" class="btn btn-outline-primary" id="addTeacherBtn" title="إدارة المدرسين">
-                                        <i class="fas fa-user-cog"></i>
-                                    </button>
-                                </div>
+                            <label for="grade" class="form-label">الصف الدراسي</label>
+                            <select id="grade" class="form-select" required></select>
+                        </div>
+                        <div class="col-md-6 col-lg-3">
+                            <label for="material" class="form-label">المادة الدراسية</label>
+                            <div class="d-flex gap-2">
+                                <select id="material" class="form-select" required></select>
+                                <button type="button" class="btn btn-outline-info" id="addMaterialBtn" title="إدارة المواد">
+                                    <i class="fas fa-book"></i>
+                                </button>
                             </div>
                         </div>
                         <div class="col-md-6 col-lg-3">
-                            <div class="form-group">
-                                <label for="material">المادة الدراسية</label>
-                                <div class="d-flex gap-2">
-                                    <select id="material" class="form-select" required></select>
-                                    <button type="button" class="btn btn-outline-info" id="addMaterialBtn" title="إدارة المواد">
-                                        <i class="fas fa-book"></i>
-                                    </button>
-                                </div>
+                            <label for="teacher" class="form-label">المدرس</label>
+                            <div class="d-flex gap-2">
+                                <select id="teacher" class="form-select" required></select>
+                                <button type="button" class="btn btn-outline-primary" id="addTeacherBtn" title="إدارة المدرسين">
+                                    <i class="fas fa-user-cog"></i>
+                                </button>
                             </div>
                         </div>
-                        <div class="col-md-12 col-lg-4">
-                            <div class="form-group">
-                                <label for="group_name_select">اسم المجموعة (الأيام)</label>
-                                <select id="group_name_select" class="form-select"></select>
-                                <input type="text" id="group_name_custom" class="form-control mt-2" placeholder="أدخل اسم المجموعة المخصص" style="display: none;">
-                            </div>
+                        <div class="col-md-12">
+                            <label for="group_name_select" class="form-label">اسم المجموعة (الأيام)</label>
+                            <select id="group_name_select" class="form-select"></select>
+                            <input type="text" id="group_name_custom" class="form-control mt-2" placeholder="أدخل اسم المجموعة المخصص" style="display: none;">
                         </div>
                     </div>
-                    <div class="form-group">
+                    <div class="form-group mt-3">
                         <label>إضافة المواعيد</label>
                         <div class="time-builder">
                             <select id="time_hour" class="form-select"></select>
@@ -104,8 +102,12 @@
                         <button class="filter-btn grade-second" data-grade="second">الصف الثاني</button>
                         <button class="filter-btn grade-third" data-grade="third">الصف الثالث</button>
                     </div>
-                    <!-- FIXED: Replaced the simple flex container with a more specific one for styling -->
                     <div class="select-filters-container">
+                        <div class="group-filter-container">
+                             <select id="centerFilter" class="form-select">
+                                <option value="all">كل المراكز</option>
+                            </select>
+                        </div>
                         <div class="group-filter-container">
                              <select id="teacherFilter" class="form-select">
                                 <option value="all">كل المدرسين</option>
@@ -133,6 +135,7 @@
                         <thead>
                             <tr>
                                 <th>#</th>
+                                <th>المركز</th>
                                 <th>الصف</th>
                                 <th>المجموعة والموعد</th>
                                 <th>المدرس</th>
@@ -168,7 +171,6 @@
 
     <div id="toastContainer" class="toast-container position-fixed bottom-0 end-0 p-3"></div>
     
-    <!-- START: New Modern Footer -->
     <footer class="app-footer">
         <div class="container">
             <span>© 2025 لوحة تحكم السنتر التعليمي  . جميع الحقوق محفوظة.</span>
@@ -181,7 +183,6 @@
             </span>
         </div>
     </footer>
-    <!-- END: New Modern Footer -->
 
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>

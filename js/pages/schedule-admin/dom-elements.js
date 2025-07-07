@@ -4,7 +4,10 @@ export const elements = {
     formTitle: document.getElementById('formTitle'),
     gradeSelect: document.getElementById('grade'),
     materialSelect: document.getElementById('material'),
+    centerSelect: document.getElementById('center'), // ADDED
+    teacherSelect: document.getElementById('teacher'), // ADDED
     addMaterialBtn: document.getElementById('addMaterialBtn'),
+    addTeacherBtn: document.getElementById('addTeacherBtn'), // ADDED
     groupNameSelect: document.getElementById('group_name_select'),
     groupNameCustomInput: document.getElementById('group_name_custom'),
     saveBtn: document.getElementById('saveBtn'),
@@ -22,7 +25,8 @@ export const elements = {
     gradeFiltersContainer: document.getElementById('gradeFilters'),
     groupFilterSelect: document.getElementById('groupFilter'),
     teacherFilterSelect: document.getElementById('teacherFilter'),
-    materialFilterSelect: document.getElementById('materialFilter'), // ADDED: Reference to the new filter
+    materialFilterSelect: document.getElementById('materialFilter'),
+    centerFilterSelect: document.getElementById('centerFilter'), // ADDED
     confirmationModal: new bootstrap.Modal(document.getElementById('confirmationModal')),
     confirmationModalTitle: document.getElementById('confirmationModalTitle'),
     confirmationModalBody: document.getElementById('confirmationModalBody'),

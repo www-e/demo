@@ -8,7 +8,7 @@ DROP TABLE IF EXISTS public.teachers CASCADE;
 DROP TABLE IF EXISTS public.materials CASCADE; -- ADDED
 DROP TABLE IF EXISTS public.centers CASCADE;   -- ADDED
 DROP TYPE IF EXISTS public.grade_level;
-DROP FUNCTION IF EXISTS delete_teacher_and_reassign_students(uuid);
+DROP FUNCTION IF EXISTS delete_teacher_and_reassign(uuid);
 DROP FUNCTION IF EXISTS delete_center_and_reassign(uuid);    -- ADDED
 DROP FUNCTION IF EXISTS delete_material_and_reassign(uuid); -- ADDED
 
@@ -35,23 +35,24 @@ CREATE TABLE public.materials (
 CREATE TABLE public.teachers (
     id UUID DEFAULT gen_random_uuid() PRIMARY KEY,
     name TEXT NOT NULL,
-    center_id UUID REFERENCES public.centers(id) ON DELETE SET NULL, -- ADDED
     is_active BOOLEAN DEFAULT true NOT NULL,
     created_at TIMESTAMP WITH TIME ZONE DEFAULT timezone('utc'::text, now()) NOT NULL
 );
 CREATE UNIQUE INDEX unique_active_teacher_name ON public.teachers (name) WHERE (is_active = true);
 
--- Step 6: Create the `schedules` table, now linked to a material.
+-- Step 6: Create the `schedules` table, now linked to a material AND a center.
 CREATE TABLE public.schedules (
     id UUID DEFAULT gen_random_uuid() PRIMARY KEY,
     grade grade_level NOT NULL,
     group_name TEXT NOT NULL,
     time_slot TIME NOT NULL,
     teacher_id UUID REFERENCES public.teachers(id) ON DELETE SET NULL,
-    material_id UUID REFERENCES public.materials(id) ON DELETE SET NULL, -- ADDED
+    material_id UUID REFERENCES public.materials(id) ON DELETE SET NULL,
+    center_id UUID REFERENCES public.centers(id) ON DELETE SET NULL, -- ADDED
     is_active BOOLEAN DEFAULT true NOT NULL,
     created_at TIMESTAMP WITH TIME ZONE DEFAULT timezone('utc'::text, now()) NOT NULL,
-    CONSTRAINT unique_schedule_time_with_teacher_material UNIQUE(grade, group_name, time_slot, teacher_id, material_id)
+    -- MODIFIED: Added center_id to the unique constraint to allow same group/time in different centers
+    CONSTRAINT unique_schedule_time_with_teacher_material_center UNIQUE(grade, group_name, time_slot, teacher_id, material_id, center_id)
 );
 
 -- Step 7: Create the `registrations_2025_2026` table, now with all links.
@@ -68,7 +69,7 @@ CREATE TABLE public.registrations_2025_2026 (
     time_slot TIME NOT NULL,
     created_at TIMESTAMP WITH TIME ZONE DEFAULT timezone('utc'::text, now()) NOT NULL,
     updated_at TIMESTAMP WITH TIME ZONE DEFAULT timezone('UTC'::text, now()) NOT NULL,
-    CONSTRAINT idx_unique_student_per_grade_material UNIQUE(student_phone, grade, material_id) -- MODIFIED
+    CONSTRAINT idx_unique_student_per_grade_material_center UNIQUE(student_phone, grade, material_id, center_id) -- MODIFIED
 );
 
 -- Step 8: Grant permissions for the public 'anon' role.
@@ -81,7 +82,7 @@ GRANT SELECT, INSERT, UPDATE, DELETE ON TABLE public.registrations_2025_2026 TO 
 -- Step 9: Insert default "General" records for fallbacks.
 INSERT INTO public.centers (name) VALUES ('عام');
 INSERT INTO public.materials (name) VALUES ('عامة');
-INSERT INTO public.teachers (name, center_id) VALUES ('عام', (SELECT id from public.centers WHERE name = 'عام'));
+INSERT INTO public.teachers (name) VALUES ('عام');
 
 -- Step 10: Create RPC functions for safe deletions.
 
@@ -95,8 +96,8 @@ BEGIN
     IF general_center_id IS NULL THEN RAISE EXCEPTION 'Critical error: General center not found.'; END IF;
     IF center_id_to_delete = general_center_id THEN RAISE EXCEPTION 'Cannot delete the main "General" center.'; END IF;
 
-    -- Reassign teachers of the deleted center to the general center
-    UPDATE public.teachers SET center_id = general_center_id WHERE center_id = center_id_to_delete;
+    -- Reassign schedules of the deleted center to the general center
+    UPDATE public.schedules SET center_id = general_center_id WHERE center_id = center_id_to_delete;
     -- Reassign student registrations
     UPDATE public.registrations_2025_2026 SET center_id = general_center_id WHERE center_id = center_id_to_delete;
 

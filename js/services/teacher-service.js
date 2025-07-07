@@ -5,10 +5,11 @@ export async function fetchTeachers() {
     const { data, error } = await supabase
         .from('teachers')
         .select('*')
-        .order('name'); // We fetch all teachers, active or not, for the management modal
+        .order('name'); 
     
     if (error) throw error;
-    return data.filter(t => t.is_active); // But only return active ones for dropdowns
+    // Return all teachers for management, filtering happens in the UI manager
+    return data; 
 }
 
 export async function createTeacher(teacherData) {
@@ -34,9 +35,9 @@ export async function updateTeacher(id, teacherData) {
     return data;
 }
 
-// NEW: Calls the RPC to safely delete a teacher and reassign relations
-export async function deleteAndReassignStudents(teacherId) {
-    const { error } = await supabase.rpc('delete_teacher_and_reassign_students', { 
+// RENAMED for consistency
+export async function deleteAndReassign(teacherId) {
+    const { error } = await supabase.rpc('delete_teacher_and_reassign', { 
         teacher_id_to_delete: teacherId 
     });
 

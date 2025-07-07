@@ -1,39 +1,28 @@
 // js/pages/admin/supabase-client.js
-import { SUPABASE_URL, SUPABASE_ANON_KEY } from '../../config.js';
+import { supabase as client } from '../../supabase-client.js';
 
-export const supabase = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+export const supabase = client;
 
-// Server-side data fetching with pagination and teacher filtering
-export async function fetchStudents(page = 1, pageSize = 20, grade = 'all', group = 'all', teacherId = 'all', materialId = 'all', searchQuery = '') {
+// Server-side data fetching with all filters
+export async function fetchStudents(page = 1, pageSize = 20, filters) {
+    const { grade, group, teacher, material, center, searchQuery } = filters;
     const offset = (page - 1) * pageSize;
+    
     let query = supabase
         .from('registrations_2025_2026')
-        .select(`
-            *,
-            teacher:teachers(id, name),
-            material:materials(id, name)
-        `); // ADDED: Include teacher and material information
+        .select(`*, teacher:teachers(id, name), material:materials(id, name), center:centers(id, name)`);
 
-    // Apply filters on server-side
-    if (grade !== 'all') {
-        query = query.eq('grade', grade);
-    }
-    // ADDED: Teacher filtering
-    if (teacherId !== 'all') {
-        query = query.eq('teacher_id', teacherId);
-    }
-    // ADDED: Material filtering
-    if (materialId !== 'all') {
-        query = query.eq('material_id', materialId);
-    }
+    if (grade !== 'all') query = query.eq('grade', grade);
+    if (teacher !== 'all') query = query.eq('teacher_id', teacher);
+    if (material !== 'all') query = query.eq('material_id', material);
+    if (center !== 'all') query = query.eq('center_id', center);
+    
     if (group !== 'all') {
         const [filterGroup, filterTime] = group.split('|');
         query = query.eq('days_group', filterGroup).eq('time_slot', filterTime);
     }
-    if (searchQuery.trim() !== '') {
-        query = query.or(
-            `student_name.ilike.%${searchQuery}%,student_phone.ilike.%${searchQuery}%,parent_phone.ilike.%${searchQuery}%`
-        );
+    if (searchQuery.trim()) {
+        query = query.or(`student_name.ilike.%${searchQuery}%,student_phone.ilike.%${searchQuery}%,parent_phone.ilike.%${searchQuery}%`);
     }
 
     query = query.order('created_at', { ascending: false }).range(offset, offset + pageSize - 1);
@@ -43,29 +32,22 @@ export async function fetchStudents(page = 1, pageSize = 20, grade = 'all', grou
     return data;
 }
 
-// Get total count for pagination with teacher filtering
-export async function getStudentsCount(grade = 'all', group = 'all', teacherId = 'all', materialId = 'all', searchQuery = '') {
+// Get total count for pagination with all filters
+export async function getStudentsCount(filters) {
+    const { grade, group, teacher, material, center, searchQuery } = filters;
     let query = supabase.from('registrations_2025_2026').select('*', { count: 'exact', head: true });
 
-    if (grade !== 'all') {
-        query = query.eq('grade', grade);
-    }
-    // ADDED: Teacher filtering in count
-    if (teacherId !== 'all') {
-        query = query.eq('teacher_id', teacherId);
-    }
-    // ADDED: Material filtering in count
-    if (materialId !== 'all') {
-        query = query.eq('material_id', materialId);
-    }
+    if (grade !== 'all') query = query.eq('grade', grade);
+    if (teacher !== 'all') query = query.eq('teacher_id', teacher);
+    if (material !== 'all') query = query.eq('material_id', material);
+    if (center !== 'all') query = query.eq('center_id', center);
+
     if (group !== 'all') {
         const [filterGroup, filterTime] = group.split('|');
         query = query.eq('days_group', filterGroup).eq('time_slot', filterTime);
     }
-    if (searchQuery.trim() !== '') {
-        query = query.or(
-            `student_name.ilike.%${searchQuery}%,student_phone.ilike.%${searchQuery}%,parent_phone.ilike.%${searchQuery}%`
-        );
+    if (searchQuery.trim()) {
+        query = query.or(`student_name.ilike.%${searchQuery}%,student_phone.ilike.%${searchQuery}%,parent_phone.ilike.%${searchQuery}%`);
     }
 
     const { count, error } = await query;
@@ -73,20 +55,14 @@ export async function getStudentsCount(grade = 'all', group = 'all', teacherId =
     return count;
 }
 
-// Get counts for filter cards with teacher filtering
-export async function getGradeCounts(teacherId = 'all', materialId = 'all') {
-    let query = supabase
-        .from('registrations_2025_2026')
-        .select('grade');
+// Get counts for filter cards with all filters
+export async function getGradeCounts(filters) {
+    const { teacher, material, center } = filters;
+    let query = supabase.from('registrations_2025_2026').select('grade');
     
-    // ADDED: Teacher filtering in grade counts
-    if (teacherId !== 'all') {
-        query = query.eq('teacher_id', teacherId);
-    }
-    // ADDED: Material filtering in grade counts
-    if (materialId !== 'all') {
-        query = query.eq('material_id', materialId);
-    }
+    if (teacher !== 'all') query = query.eq('teacher_id', teacher);
+    if (material !== 'all') query = query.eq('material_id', material);
+    if (center !== 'all') query = query.eq('center_id', center);
     
     const { data, error } = await query;
     if (error) throw error;
@@ -99,9 +75,4 @@ export async function getGradeCounts(teacherId = 'all', materialId = 'all') {
     });
     
     return counts;
-}
-
-export async function deleteStudent(id) {
-    const { error } = await supabase.from('registrations_2025_2026').delete().eq('id', id);
-    if (error) throw error;
 }

@@ -7,7 +7,7 @@ export async function loadSchedulesFromDB() {
     try {
         const { data, error } = await supabase
             .from('schedules')
-            .select('*,teacher:teachers(id,name),material:materials(id,name)')
+            .select('*,teacher:teachers(id,name),material:materials(id,name),center:centers(id,name)')
             .eq('is_active', true);
         if (error) throw error;
         allSchedules = data;
@@ -18,34 +18,18 @@ export async function loadSchedulesFromDB() {
     }
 }
 
-// MODIFIED: Corrected filtering logic for teachers
-export function getAvailableGroupTimes(grade, teacherId = null, materialId = null, centerId = null) {
-    if (!grade) return [];
+// MODIFIED: Corrected and simplified filtering logic
+export function getAvailableGroupTimes(grade, teacherId, materialId, centerId) {
+    if (!grade || !teacherId || !materialId || !centerId) {
+        return [];
+    }
     
-    // 1. Filter by grade first
-    let schedulesByGrade = allSchedules.filter(s => s.grade === grade);
-    
-    // 2. Then, filter by material
-    let schedulesByMaterial = schedulesByGrade;
-    if (materialId) {
-        schedulesByMaterial = schedulesByMaterial.filter(schedule => schedule.material_id === materialId);
-    }
-
-    // 3. Then, filter by teacher
-    let schedulesByTeacher = schedulesByMaterial;
-    if (teacherId) {
-        schedulesByTeacher = schedulesByTeacher.filter(schedule => schedule.teacher_id === teacherId);
-    } else {
-        schedulesByTeacher = schedulesByTeacher.filter(schedule => schedule.teacher_id === null);
-    }
-
-    // 4. Finally, filter by center
-    let relevantSchedules = schedulesByTeacher;
-    if (centerId) {
-        relevantSchedules = relevantSchedules.filter(schedule => schedule.center_id === centerId);
-    } else {
-        relevantSchedules = relevantSchedules.filter(schedule => schedule.center_id === null);
-    }
+    const relevantSchedules = allSchedules.filter(schedule => {
+        return schedule.grade === grade &&
+               schedule.teacher_id === teacherId &&
+               schedule.material_id === materialId &&
+               schedule.center_id === centerId;
+    });
 
     relevantSchedules.sort((a, b) => {
         if (a.group_name < b.group_name) return -1;
@@ -69,20 +53,28 @@ export function getAvailableGroupTimes(grade, teacherId = null, materialId = nul
     });
 }
 
-async function checkExistingRegistration(phone, grade) {
+async function checkExistingRegistration(phone, grade, materialId, centerId) {
     const { error, count } = await supabase.from('registrations_2025_2026')
         .select('id', { count: 'exact' })
         .eq('student_phone', phone)
-        .eq('grade', grade);
+        .eq('grade', grade)
+        .eq('material_id', materialId)
+        .eq('center_id', centerId);
         
     if (error) throw error;
     return count > 0;
 }
 
 export async function submitRegistration(registrationData) {
-    const exists = await checkExistingRegistration(registrationData.student_phone, registrationData.grade);
+    const exists = await checkExistingRegistration(
+        registrationData.student_phone, 
+        registrationData.grade,
+        registrationData.material_id,
+        registrationData.center_id
+    );
+
     if (exists) {
-        return { success: false, error: 'الطالب مسجل بالفعل.', errorCode: 'DUPLICATE_STUDENT' };
+        return { success: false, error: 'الطالب مسجل بالفعل في هذه المادة والمركز.', errorCode: 'DUPLICATE_STUDENT' };
     }
 
     const { error } = await supabase.from('registrations_2025_2026').insert([registrationData]);

@@ -12,21 +12,18 @@ export function createFormManager(elements, timeBuilder) {
             ...otherTeachers.map(teacher => ({ v: teacher.id, t: teacher.name }))
         ];
         populateSelect(elements.teacherSelect, formOptions, 'اختر المدرس...');
-
-        const filterOptions = [
-             { v: 'all', t: 'كل المدرسين' },
-            ...teachers.map(teacher => ({ v: teacher.id, t: teacher.name }))
-        ];
-        if (elements.teacherFilterSelect) {
-            populateSelect(elements.teacherFilterSelect, filterOptions, 'فلترة بالمدرس...');
-        }
     }
 
-    function populateMaterialSelect(materials) {
+    function populateMaterialSelects(materials) {
         const materialOptions = materials.map(material => ({ v: material.id, t: material.name }));
         populateSelect(elements.materialSelect, materialOptions, 'اختر المادة...');
     }
     
+    function populateCenterSelects(centers) {
+        const centerOptions = centers.map(center => ({ v: center.id, t: center.name }));
+        populateSelect(elements.centerSelect, centerOptions, 'اختر المركز...');
+    }
+
     function resetForm(setEditingGroup) {
         setEditingGroup(null);
         elements.form.reset();
@@ -44,7 +41,8 @@ export function createFormManager(elements, timeBuilder) {
 
     return {
         populateTeacherSelects,
-        populateMaterialSelect, // Exposed the function
+        populateMaterialSelects,
+        populateCenterSelects, // ADDED
         resetForm,
         initializeBaseUIDropdowns
     };

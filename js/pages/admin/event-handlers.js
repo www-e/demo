@@ -1,9 +1,10 @@
 // js/pages/admin/event-handlers.js
-import { currentFilter, currentPage, allStudents, studentDetailModal, setCurrentFilter, setCurrentPage } from './state.js';
-import { applyFilters, updateGroupFilterDropdown } from './filters.js';
+import { currentFilter, allStudents, studentDetailModal, setCurrentFilter, setCurrentPage } from './state.js';
+import { applyFilters } from './filters.js';
 import { renderModalContent } from './modal-manager.js';
 import { handleDeleteStudent } from './crud-operations.js';
 import { debounce } from './helpers.js';
+import { renderFilterCards } from './filter-cards.js';
 
 export function setupEventListeners() {
     // Grade filter cards
@@ -16,38 +17,27 @@ export function setupEventListeners() {
         
         setCurrentFilter({ grade: card.dataset.grade });
         setCurrentPage(1);
-        updateGroupFilterDropdown();
         applyFilters();
     });
 
-    // Group filter dropdown
-    document.getElementById('group-filter').addEventListener('change', e => {
-        setCurrentFilter({ group: e.target.value });
-        setCurrentPage(1);
-        applyFilters();
-    });
+    // Dropdown filters
+    const setupFilterListener = (id, filterKey) => {
+        const filterElement = document.getElementById(id);
+        if (filterElement) {
+            filterElement.addEventListener('change', e => {
+                setCurrentFilter({ [filterKey]: e.target.value });
+                setCurrentPage(1);
+                applyFilters();
+                renderFilterCards(); // Refresh grade counts based on new filters
+            });
+        }
+    };
+    
+    setupFilterListener('centerFilter', 'center');
+    setupFilterListener('teacherFilter', 'teacher');
+    setupFilterListener('materialFilter', 'material');
 
-    // ADDED: Teacher filter dropdown
-    const materialFilter = document.getElementById('materialFilter');
-    if (materialFilter) {
-        materialFilter.addEventListener('change', e => {
-            setCurrentFilter({ material: e.target.value });
-            setCurrentPage(1);
-            applyFilters();
-        });
-    }
-
-    // ADDED: Teacher filter dropdown (assuming this was the missing part causing the error)
-    const teacherFilter = document.getElementById('teacherFilter');
-    if (teacherFilter) {
-        teacherFilter.addEventListener('change', e => {
-            setCurrentFilter({ teacher: e.target.value });
-            setCurrentPage(1);
-            applyFilters();
-        });
-    }
-
-    // NEW: Debounced search input (300ms delay)
+    // Debounced search input
     const debouncedSearch = debounce((searchQuery) => {
         setCurrentFilter({ searchQuery });
         setCurrentPage(1);
@@ -63,16 +53,13 @@ export function setupEventListeners() {
         const deleteButton = e.target.closest('.btn-action.delete');
         if (deleteButton) {
             e.stopPropagation();
-            const studentId = deleteButton.dataset.id;
-            const studentName = deleteButton.dataset.name;
-            handleDeleteStudent(studentId, studentName);
+            handleDeleteStudent(deleteButton.dataset.id, deleteButton.dataset.name);
             return;
         }
 
         const studentRow = e.target.closest('tr[data-id]');
         if (studentRow) {
-            const studentId = studentRow.dataset.id;
-            const student = allStudents.find(s => s.id === studentId);
+            const student = allStudents.find(s => s.id === studentRow.dataset.id);
             if (student) {
                 renderModalContent(student);
                 studentDetailModal.show();
@@ -80,16 +67,13 @@ export function setupEventListeners() {
         }
     });
     
-    // Pagination with smooth scrolling
+    // Pagination
     document.getElementById('pagination-controls').addEventListener('click', e => {
         const button = e.target.closest('button[data-page]');
         if (!button || button.disabled) return;
         
-        const page = parseInt(button.dataset.page, 10);
-        setCurrentPage(page);
+        setCurrentPage(parseInt(button.dataset.page, 10));
         applyFilters();
-        
-        // Smooth scroll to top
         window.scrollTo({ top: 0, behavior: 'smooth' });
     });
 }
