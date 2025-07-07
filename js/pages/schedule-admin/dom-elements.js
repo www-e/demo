@@ -3,8 +3,8 @@ export const elements = {
     form: document.getElementById('scheduleForm'),
     formTitle: document.getElementById('formTitle'),
     gradeSelect: document.getElementById('grade'),
-    teacherSelect: document.getElementById('teacher'),
-    addTeacherBtn: document.getElementById('addTeacherBtn'),
+    materialSelect: document.getElementById('material'),
+    addMaterialBtn: document.getElementById('addMaterialBtn'),
     groupNameSelect: document.getElementById('group_name_select'),
     groupNameCustomInput: document.getElementById('group_name_custom'),
     saveBtn: document.getElementById('saveBtn'),
@@ -21,7 +21,8 @@ export const elements = {
     timePillsContainer: document.getElementById('timePillsContainer'),
     gradeFiltersContainer: document.getElementById('gradeFilters'),
     groupFilterSelect: document.getElementById('groupFilter'),
-    teacherFilterSelect: document.getElementById('teacherFilter'), // ADDED: Reference to the new filter
+    teacherFilterSelect: document.getElementById('teacherFilter'),
+    materialFilterSelect: document.getElementById('materialFilter'), // ADDED: Reference to the new filter
     confirmationModal: new bootstrap.Modal(document.getElementById('confirmationModal')),
     confirmationModalTitle: document.getElementById('confirmationModalTitle'),
     confirmationModalBody: document.getElementById('confirmationModalBody'),

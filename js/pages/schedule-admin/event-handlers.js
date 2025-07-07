@@ -2,8 +2,9 @@
 import { showConfirmation, showToast } from './ui-helpers.js';
 import * as ScheduleService from '../../services/schedule-service.js';
 import { deleteAndReassignStudents } from '../../services/teacher-service.js';
+import { deleteAndReassignMaterial } from '../../services/material-service.js';
 
-export function createEventHandlers({ elements, state, timeBuilder, teacherModal, formManager, loadAndRenderAllData }) {
+export function createEventHandlers({ elements, state, timeBuilder, teacherModal, materialModal, formManager, loadAndRenderAllData }) {
 
     function handleEditGroup(dataset) {
         showConfirmation({
@@ -12,16 +13,18 @@ export function createEventHandlers({ elements, state, timeBuilder, teacherModal
             confirmText: 'نعم، ابدأ', btnClass: 'btn-info',
             onConfirm: () => {
                 state.setEditingGroup(dataset);
-                const { grade, group, teacher } = dataset;
+                const { grade, group, teacher, material } = dataset;
                 const groupSchedules = state.getSchedules().filter(s => 
                     s.grade === grade && 
                     s.group_name === group && 
-                    (s.teacher_id === teacher || (s.teacher_id === null && !teacher))
+                    (s.teacher_id === teacher || (s.teacher_id === null && !teacher)) &&
+                    (s.material_id === material || (s.material_id === null && !material))
                 );
                 
                 elements.formTitle.textContent = `تعديل مجموعة: ${group}`;
                 elements.gradeSelect.value = grade;
                 elements.teacherSelect.value = teacher || '';
+                elements.materialSelect.value = material || '';
                 
                 const standardGroup = Array.from(elements.groupNameSelect.options).find(opt => opt.value === group);
                 elements.groupNameSelect.value = standardGroup ? group : 'custom';
@@ -60,6 +63,7 @@ export function createEventHandlers({ elements, state, timeBuilder, teacherModal
         const groupName = elements.groupNameSelect.value === 'custom' ? elements.groupNameCustomInput.value.trim() : elements.groupNameSelect.value;
         const timeSlots = timeBuilder.getTimes();
         const teacherId = elements.teacherSelect.value || null;
+        const materialId = elements.materialSelect.value || null;
         
         if (!elements.gradeSelect.value || !groupName || timeSlots.length === 0) {
             return showToast('يرجى ملء جميع الحقول.', 'error');
@@ -75,12 +79,13 @@ export function createEventHandlers({ elements, state, timeBuilder, teacherModal
                     grade: elements.gradeSelect.value, 
                     group_name: groupName, 
                     time_slot: time,
-                    teacher_id: teacherId
+                    teacher_id: teacherId,
+                    material_id: materialId
                 }));
                 
                 try {
                     const isEditing = !!state.getEditingGroup();
-                    await ScheduleService.saveScheduleWithTeacher(records, isEditing, state.getEditingGroup());
+                    await ScheduleService.saveScheduleWithTeacherAndMaterial(records, isEditing, state.getEditingGroup());
                     showToast(isEditing ? 'تم تعديل المجموعة!' : 'تمت إضافة المجموعة!', 'success');
                     formManager.resetForm(state.setEditingGroup);
                     await loadAndRenderAllData();
@@ -105,13 +110,43 @@ export function createEventHandlers({ elements, state, timeBuilder, teacherModal
             showConfirmation({
                 modal: { instance: elements.confirmationModal, title: elements.confirmationModalTitle, body: elements.confirmationModalBody, confirmBtn: elements.confirmActionBtn },
                 title: 'تأكيد الحذف',
-                body: `هل أنت متأكد من حذف المدرس "${teacher.name}"؟ سيتم نقل كل الطلاب والمجموعات المسجلين معه إلى "عام". لا يمكن التراجع عن هذا الإجراء.`,
+                body: `هل أنت متأكد من حذف المدرس "${teacher.name}"؟ سيتم نقل كل الطلاب والمجموعات المسجلة لديه إلى "عام". لا يمكن التراجع عن هذا الإجراء.`,
                 confirmText: 'نعم، حذف وأعد التعيين',
                 btnClass: 'btn-danger',
                 onConfirm: async () => {
                     try {
                         await deleteAndReassignStudents(teacher.id);
-                        showToast('تم حذف المدرس ونقل الطلاب بنجاح.', 'success');
+                        showToast('تم حذف المدرس ونقل الطلاب والمجموعات بنجاح.', 'success');
+                        await loadAndRenderAllData();
+                    } catch (error) {
+                        showToast('خطأ في الحذف: ' + error.message, 'error');
+                    }
+                }
+            });
+        });
+    }
+
+    function handleAddMaterial() {
+        materialModal.show(state.getMaterials());
+    }
+
+    function setupMaterialModalListeners() {
+        materialModal.onSaved(async () => {
+            await loadAndRenderAllData();
+        });
+
+        materialModal.onDelete(async (material) => {
+            materialModal.hide();
+            showConfirmation({
+                modal: { instance: elements.confirmationModal, title: elements.confirmationModalTitle, body: elements.confirmationModalBody, confirmBtn: elements.confirmActionBtn },
+                title: 'تأكيد الحذف',
+                body: `هل أنت متأكد من حذف المادة "${material.name}"؟ سيتم نقل كل المجموعات المسجلة بها إلى "عامة". لا يمكن التراجع عن هذا الإجراء.`,
+                confirmText: 'نعم، حذف وأعد التعيين',
+                btnClass: 'btn-danger',
+                onConfirm: async () => {
+                    try {
+                        await deleteAndReassignMaterial(material.id);
+                        showToast('تم حذف المادة ونقل المجموعات بنجاح.', 'success');
                         await loadAndRenderAllData();
                     } catch (error) {
                         showToast('خطأ في الحذف: ' + error.message, 'error');
@@ -126,6 +161,8 @@ export function createEventHandlers({ elements, state, timeBuilder, teacherModal
         handleDelete,
         handleSave,
         handleAddTeacher,
-        setupTeacherModalListeners
+        setupTeacherModalListeners,
+        handleAddMaterial,
+        setupMaterialModalListeners,
     };
 }

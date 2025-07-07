@@ -5,110 +5,142 @@
 DROP TABLE IF EXISTS public.registrations_2025_2026 CASCADE;
 DROP TABLE IF EXISTS public.schedules CASCADE;
 DROP TABLE IF EXISTS public.teachers CASCADE;
+DROP TABLE IF EXISTS public.materials CASCADE; -- ADDED
+DROP TABLE IF EXISTS public.centers CASCADE;   -- ADDED
 DROP TYPE IF EXISTS public.grade_level;
+DROP FUNCTION IF EXISTS delete_teacher_and_reassign_students(uuid);
+DROP FUNCTION IF EXISTS delete_center_and_reassign(uuid);    -- ADDED
+DROP FUNCTION IF EXISTS delete_material_and_reassign(uuid); -- ADDED
 
 -- Step 2: Create necessary types.
 CREATE TYPE grade_level AS ENUM ('first', 'second', 'third');
 
--- Step 3: Create the 'teachers' table.
+-- Step 3: Create the new `centers` table.
+CREATE TABLE public.centers (
+    id UUID DEFAULT gen_random_uuid() PRIMARY KEY,
+    name TEXT NOT NULL UNIQUE,
+    is_active BOOLEAN DEFAULT true NOT NULL,
+    created_at TIMESTAMP WITH TIME ZONE DEFAULT timezone('utc'::text, now()) NOT NULL
+);
+
+-- Step 4: Create the new `materials` table.
+CREATE TABLE public.materials (
+    id UUID DEFAULT gen_random_uuid() PRIMARY KEY,
+    name TEXT NOT NULL UNIQUE,
+    is_active BOOLEAN DEFAULT true NOT NULL,
+    created_at TIMESTAMP WITH TIME ZONE DEFAULT timezone('utc'::text, now()) NOT NULL
+);
+
+-- Step 5: Create the `teachers` table, now linked to a center.
 CREATE TABLE public.teachers (
     id UUID DEFAULT gen_random_uuid() PRIMARY KEY,
     name TEXT NOT NULL,
+    center_id UUID REFERENCES public.centers(id) ON DELETE SET NULL, -- ADDED
     is_active BOOLEAN DEFAULT true NOT NULL,
     created_at TIMESTAMP WITH TIME ZONE DEFAULT timezone('utc'::text, now()) NOT NULL
-    -- REMOVED: The old unique constraint was here. It is replaced by a conditional index below.
 );
+CREATE UNIQUE INDEX unique_active_teacher_name ON public.teachers (name) WHERE (is_active = true);
 
--- ADDED: Create a conditional unique index for soft deletes.
--- This ensures that a teacher's name is unique ONLY if they are active.
--- This allows you to "delete" a teacher and later re-add one with the same name.
-CREATE UNIQUE INDEX unique_active_teacher_name
-ON public.teachers (name)
-WHERE (is_active = true);
-
--- Step 4: Create the 'schedules' table with teacher support.
+-- Step 6: Create the `schedules` table, now linked to a material.
 CREATE TABLE public.schedules (
     id UUID DEFAULT gen_random_uuid() PRIMARY KEY,
     grade grade_level NOT NULL,
     group_name TEXT NOT NULL,
     time_slot TIME NOT NULL,
     teacher_id UUID REFERENCES public.teachers(id) ON DELETE SET NULL,
+    material_id UUID REFERENCES public.materials(id) ON DELETE SET NULL, -- ADDED
     is_active BOOLEAN DEFAULT true NOT NULL,
     created_at TIMESTAMP WITH TIME ZONE DEFAULT timezone('utc'::text, now()) NOT NULL,
-    -- Ensures a time slot is unique for a given group, grade, and teacher
-    CONSTRAINT unique_schedule_time_with_teacher UNIQUE(grade, group_name, time_slot, teacher_id)
+    CONSTRAINT unique_schedule_time_with_teacher_material UNIQUE(grade, group_name, time_slot, teacher_id, material_id)
 );
 
--- Step 5: Create the 'registrations_2025_2026' table with teacher support.
+-- Step 7: Create the `registrations_2025_2026` table, now with all links.
 CREATE TABLE public.registrations_2025_2026 (
     id UUID DEFAULT gen_random_uuid() PRIMARY KEY,
     student_name TEXT NOT NULL,
     student_phone TEXT NOT NULL,
     parent_phone TEXT NOT NULL,
     grade grade_level NOT NULL,
+    center_id UUID REFERENCES public.centers(id) ON DELETE SET NULL,       -- ADDED
+    material_id UUID REFERENCES public.materials(id) ON DELETE SET NULL, -- ADDED
+    teacher_id UUID REFERENCES public.teachers(id) ON DELETE SET NULL,   -- MODIFIED (was RESTRICT)
     days_group TEXT NOT NULL,
     time_slot TIME NOT NULL,
-    teacher_id UUID REFERENCES public.teachers(id) ON DELETE RESTRICT,
     created_at TIMESTAMP WITH TIME ZONE DEFAULT timezone('utc'::text, now()) NOT NULL,
     updated_at TIMESTAMP WITH TIME ZONE DEFAULT timezone('UTC'::text, now()) NOT NULL,
-    -- Ensures a student can only register once per grade
-    CONSTRAINT idx_unique_student_per_grade UNIQUE(student_phone, grade)
+    CONSTRAINT idx_unique_student_per_grade_material UNIQUE(student_phone, grade, material_id) -- MODIFIED
 );
 
--- Step 6: Grant permissions for the public 'anon' role.
--- Permissions for the teachers table
+-- Step 8: Grant permissions for the public 'anon' role.
+GRANT SELECT, INSERT, UPDATE, DELETE ON TABLE public.centers TO anon;
+GRANT SELECT, INSERT, UPDATE, DELETE ON TABLE public.materials TO anon;
 GRANT SELECT, INSERT, UPDATE, DELETE ON TABLE public.teachers TO anon;
-
--- Permissions for the schedules table
 GRANT SELECT, INSERT, UPDATE, DELETE ON TABLE public.schedules TO anon;
-
--- Permissions for the student registrations table
 GRANT SELECT, INSERT, UPDATE, DELETE ON TABLE public.registrations_2025_2026 TO anon;
 
--- Step 7: Insert default "General" teacher for backward compatibility
-INSERT INTO public.teachers (name) VALUES ('عام (متاح للجميع)');
+-- Step 9: Insert default "General" records for fallbacks.
+INSERT INTO public.centers (name) VALUES ('عام');
+INSERT INTO public.materials (name) VALUES ('عامة');
+INSERT INTO public.teachers (name, center_id) VALUES ('عام', (SELECT id from public.centers WHERE name = 'عام'));
 
--- Step 8: Create the RPC function for safe teacher deletion
-CREATE OR REPLACE FUNCTION delete_teacher_and_reassign_students(teacher_id_to_delete uuid)
+-- Step 10: Create RPC functions for safe deletions.
+
+-- Function to safely delete a center
+CREATE OR REPLACE FUNCTION delete_center_and_reassign(center_id_to_delete uuid)
+RETURNS void AS $$
+DECLARE
+    general_center_id uuid;
+BEGIN
+    SELECT id INTO general_center_id FROM public.centers WHERE name = 'عام' LIMIT 1;
+    IF general_center_id IS NULL THEN RAISE EXCEPTION 'Critical error: General center not found.'; END IF;
+    IF center_id_to_delete = general_center_id THEN RAISE EXCEPTION 'Cannot delete the main "General" center.'; END IF;
+
+    -- Reassign teachers of the deleted center to the general center
+    UPDATE public.teachers SET center_id = general_center_id WHERE center_id = center_id_to_delete;
+    -- Reassign student registrations
+    UPDATE public.registrations_2025_2026 SET center_id = general_center_id WHERE center_id = center_id_to_delete;
+
+    UPDATE public.centers SET is_active = false WHERE id = center_id_to_delete;
+END;
+$$ LANGUAGE plpgsql;
+
+-- Function to safely delete a material
+CREATE OR REPLACE FUNCTION delete_material_and_reassign(material_id_to_delete uuid)
+RETURNS void AS $$
+DECLARE
+    general_material_id uuid;
+BEGIN
+    SELECT id INTO general_material_id FROM public.materials WHERE name = 'عامة' LIMIT 1;
+    IF general_material_id IS NULL THEN RAISE EXCEPTION 'Critical error: General material not found.'; END IF;
+    IF material_id_to_delete = general_material_id THEN RAISE EXCEPTION 'Cannot delete the main "General" material.'; END IF;
+
+    -- Reassign schedules and student registrations
+    UPDATE public.schedules SET material_id = general_material_id WHERE material_id = material_id_to_delete;
+    UPDATE public.registrations_2025_2026 SET material_id = general_material_id WHERE material_id = material_id_to_delete;
+
+    UPDATE public.materials SET is_active = false WHERE id = material_id_to_delete;
+END;
+$$ LANGUAGE plpgsql;
+
+-- Function to safely delete a teacher
+CREATE OR REPLACE FUNCTION delete_teacher_and_reassign(teacher_id_to_delete uuid)
 RETURNS void AS $$
 DECLARE
     general_teacher_id uuid;
 BEGIN
-    -- 1. Find the ID of the 'عام (متاح للجميع)' teacher.
-    -- This makes the function robust even if the ID changes.
-    SELECT id INTO general_teacher_id FROM public.teachers WHERE name = 'عام (متاح للجميع)' LIMIT 1;
+    SELECT id INTO general_teacher_id FROM public.teachers WHERE name = 'عام' LIMIT 1;
+    IF general_teacher_id IS NULL THEN RAISE EXCEPTION 'Critical error: General teacher not found.'; END IF;
+    IF teacher_id_to_delete = general_teacher_id THEN RAISE EXCEPTION 'Cannot delete the main "General" teacher.'; END IF;
 
-    -- 2. If the general teacher cannot be found, abort the operation.
-    IF general_teacher_id IS NULL THEN
-        RAISE EXCEPTION 'Critical error: General teacher "عام (متاح للجميع)" not found. Aborting operation.';
-    END IF;
-
-    -- 3. Prevent deleting the general teacher itself.
-    IF teacher_id_to_delete = general_teacher_id THEN
-        RAISE EXCEPTION 'Cannot delete the main "General" teacher.';
-    END IF;
-
-    -- 4. Reassign students from the deleted teacher to the general teacher.
-    UPDATE public.registrations_2025_2026
-    SET teacher_id = general_teacher_id
-    WHERE teacher_id = teacher_id_to_delete;
-
-    -- 5. Reassign schedules from the deleted teacher to the general teacher.
-    UPDATE public.schedules
-    SET teacher_id = general_teacher_id
-    WHERE teacher_id = teacher_id_to_delete;
-
-    -- 6. Soft-delete the teacher by marking them as inactive.
-    -- This preserves their record but removes them from active use.
-    UPDATE public.teachers
-    SET is_active = false
-    WHERE id = teacher_id_to_delete;
-
+    UPDATE public.registrations_2025_2026 SET teacher_id = general_teacher_id WHERE teacher_id = teacher_id_to_delete;
+    UPDATE public.schedules SET teacher_id = general_teacher_id WHERE teacher_id = teacher_id_to_delete;
+    UPDATE public.teachers SET is_active = false WHERE id = teacher_id_to_delete;
 END;
 $$ LANGUAGE plpgsql;
 
--- Step 9: Grant execute permission on the function to the anon role
-GRANT EXECUTE ON FUNCTION public.delete_teacher_and_reassign_students(uuid) TO anon;
+-- Step 11: Grant execute permissions on the functions.
+GRANT EXECUTE ON FUNCTION public.delete_center_and_reassign(uuid) TO anon;
+GRANT EXECUTE ON FUNCTION public.delete_material_and_reassign(uuid) TO anon;
+GRANT EXECUTE ON FUNCTION public.delete_teacher_and_reassign(uuid) TO anon;
 
--- Confirmation message
-SELECT 'Schema setup and RPC function creation are complete.' AS status;
+SELECT 'Schema setup and RPC functions are complete.' AS status;

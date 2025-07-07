@@ -21,6 +21,11 @@ export function createFormManager(elements, timeBuilder) {
             populateSelect(elements.teacherFilterSelect, filterOptions, 'فلترة بالمدرس...');
         }
     }
+
+    function populateMaterialSelect(materials) {
+        const materialOptions = materials.map(material => ({ v: material.id, t: material.name }));
+        populateSelect(elements.materialSelect, materialOptions, 'اختر المادة...');
+    }
     
     function resetForm(setEditingGroup) {
         setEditingGroup(null);
@@ -39,6 +44,7 @@ export function createFormManager(elements, timeBuilder) {
 
     return {
         populateTeacherSelects,
+        populateMaterialSelect, // Exposed the function
         resetForm,
         initializeBaseUIDropdowns
     };

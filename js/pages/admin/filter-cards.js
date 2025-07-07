@@ -7,7 +7,7 @@ export async function renderFilterCards() {
     const container = document.getElementById('stats-section').querySelector('.grid');
     
     try {
-        const counts = await getGradeCounts(currentFilter.teacher); // ADDED: Pass teacher filter
+        const counts = await getGradeCounts(currentFilter.teacher, currentFilter.material); // ADDED: Pass teacher and material filter
         
         const cardsData = [
             { grade: 'all', label: 'إجمالي الطلاب', count: counts.all, icon: 'fa-users', color: 'violet' },
@@ -83,6 +83,9 @@ function renderFilterCardsClientSide() {
     let studentsToCount = allStudents;
     if (currentFilter.teacher !== 'all') {
         studentsToCount = allStudents.filter(s => s.teacher_id === currentFilter.teacher);
+    }
+    if (currentFilter.material !== 'all') {
+        studentsToCount = studentsToCount.filter(s => s.material_id === currentFilter.material);
     }
     
     const counts = { 

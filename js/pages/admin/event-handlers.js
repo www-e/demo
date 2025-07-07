@@ -28,6 +28,16 @@ export function setupEventListeners() {
     });
 
     // ADDED: Teacher filter dropdown
+    const materialFilter = document.getElementById('materialFilter');
+    if (materialFilter) {
+        materialFilter.addEventListener('change', e => {
+            setCurrentFilter({ material: e.target.value });
+            setCurrentPage(1);
+            applyFilters();
+        });
+    }
+
+    // ADDED: Teacher filter dropdown (assuming this was the missing part causing the error)
     const teacherFilter = document.getElementById('teacherFilter');
     if (teacherFilter) {
         teacherFilter.addEventListener('change', e => {

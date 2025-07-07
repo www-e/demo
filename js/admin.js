@@ -2,7 +2,7 @@
 import { initializeUpdateModal } from './components/update-modal.js';
 import { initializePageLoader } from './pages/admin/page-loader.js';
 import { supabase, getGradeCounts } from './pages/admin/supabase-client.js';
-import { fetchTeachers } from './services/teacher-service.js';
+import { fetchMaterials } from './services/material-service.js';
 import { allStudents, currentFilter, setAllStudents, setStudentDetailModal, setDeleteConfirmationModal } from './pages/admin/state.js';
 import { setupEventListeners } from './pages/admin/event-handlers.js';
 import { renderFilterCards } from './pages/admin/filter-cards.js';
@@ -23,21 +23,21 @@ const GRADE_NAMES = {
 initializePageLoader();
 
 // Load teachers and populate filter
-async function loadTeachers() {
+async function loadMaterials() {
     try {
-        const teachers = await fetchTeachers();
-        const teacherFilterSelect = document.getElementById('teacherFilter');
-        if (teacherFilterSelect) {
-            teacherFilterSelect.innerHTML = '<option value="all">كل المدرسين</option>';
-            teachers.forEach(teacher => {
+        const materials = await fetchMaterials();
+        const materialFilterSelect = document.getElementById('materialFilter');
+        if (materialFilterSelect) {
+            materialFilterSelect.innerHTML = '<option value="all">كل المواد</option>';
+            materials.forEach(material => {
                 const option = document.createElement('option');
-                option.value = teacher.id;
-                option.textContent = teacher.name;
-                teacherFilterSelect.appendChild(option);
+                option.value = material.id;
+                option.textContent = material.name;
+                materialFilterSelect.appendChild(option);
             });
         }
     } catch (error) {
-        console.error('Error loading teachers:', error);
+        console.error('Error loading materials:', error);
     }
 }
 
@@ -76,7 +76,7 @@ document.addEventListener('DOMContentLoaded', async () => {
 // Enhanced Dashboard Initialization
 async function initializeDashboard() {
     await Promise.all([
-        loadTeachers(), // Load teachers
+        loadMaterials(),
         renderFilterCards(),
         applyFilters()
     ]);

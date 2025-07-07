@@ -12,22 +12,22 @@ export async function applyFilters() {
     
     try {
         // Fetch paginated data from server
-        // FIXED: The order of arguments was incorrect, causing the API error.
         const students = await fetchStudents(
             currentPage,
             STUDENTS_PER_PAGE,
             currentFilter.grade,
             currentFilter.group,
-            currentFilter.teacher, // <-- Corrected argument
+            currentFilter.teacher,
+            currentFilter.material, // ADDED
             currentFilter.searchQuery
         );
         
         // Get total count for pagination
-        // FIXED: The order of arguments was incorrect here as well.
         const totalCount = await getStudentsCount(
             currentFilter.grade,
             currentFilter.group,
-            currentFilter.teacher, // <-- Corrected argument
+            currentFilter.teacher,
+            currentFilter.material, // ADDED
             currentFilter.searchQuery
         );
         

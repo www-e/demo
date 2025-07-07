@@ -9,7 +9,9 @@ export async function loadSchedulesFromDB() {
             .from('schedules')
             .select(`
                 *,
-                teacher:teachers(id, name)
+            teacher:teachers(id, name),
+            material:materials(id, name),
+            center:centers(id, name)
             `)
             .eq('is_active', true);
         if (error) throw error;
@@ -22,20 +24,32 @@ export async function loadSchedulesFromDB() {
 }
 
 // MODIFIED: Corrected filtering logic for teachers
-export function getAvailableGroupTimes(grade, teacherId = null) {
+export function getAvailableGroupTimes(grade, teacherId = null, materialId = null, centerId = null) {
     if (!grade) return [];
     
     // 1. Filter by grade first
     let schedulesByGrade = allSchedules.filter(s => s.grade === grade);
     
-    // 2. Then, filter by teacher
-    let relevantSchedules;
+    // 2. Then, filter by material
+    let schedulesByMaterial = schedulesByGrade;
+    if (materialId) {
+        schedulesByMaterial = schedulesByMaterial.filter(schedule => schedule.material_id === materialId);
+    }
+
+    // 3. Then, filter by teacher
+    let schedulesByTeacher = schedulesByMaterial;
     if (teacherId) {
-        // If a specific teacher is selected, ONLY show their schedules. Do not fall back to general.
-        relevantSchedules = schedulesByGrade.filter(schedule => schedule.teacher_id === teacherId);
+        schedulesByTeacher = schedulesByTeacher.filter(schedule => schedule.teacher_id === teacherId);
     } else {
-        // If NO teacher is selected, show ONLY general schedules.
-        relevantSchedules = schedulesByGrade.filter(schedule => schedule.teacher_id === null);
+        schedulesByTeacher = schedulesByTeacher.filter(schedule => schedule.teacher_id === null);
+    }
+
+    // 4. Finally, filter by center
+    let relevantSchedules = schedulesByTeacher;
+    if (centerId) {
+        relevantSchedules = relevantSchedules.filter(schedule => schedule.center_id === centerId);
+    } else {
+        relevantSchedules = relevantSchedules.filter(schedule => schedule.center_id === null);
     }
 
     relevantSchedules.sort((a, b) => {

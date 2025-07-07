@@ -97,8 +97,16 @@ export class SuccessModal {
                     <span class="receipt-value time-name"></span>
                 </div>
                 <div class="receipt-data-row">
+                    <span class="receipt-label"><i class="fas fa-school"></i> المركز</span>
+                    <span class="receipt-value center-name"></span>
+                </div>
+                <div class="receipt-data-row">
                     <span class="receipt-label"><i class="fas fa-chalkboard-teacher"></i> المدرس</span>
                     <span class="receipt-value teacher-name"></span>
+                </div>
+                <div class="receipt-data-row">
+                    <span class="receipt-label"><i class="fas fa-book"></i> المادة</span>
+                    <span class="receipt-value material-name"></span>
                 </div>
             </div>
             <div class="confirmation-details" style="text-align: right; margin-top: 1.5rem; padding-top: 1rem; border-top: 1px solid var(--border-color);">
@@ -116,7 +124,9 @@ export class SuccessModal {
         this.modal.querySelector('.grade-name').textContent = data.gradeName || 'غير متوفر';
         this.modal.querySelector('.group-name').textContent = data.groupName || 'غير متوفر';
         this.modal.querySelector('.time-name').textContent = data.timeName || 'غير متوفر';
-        this.modal.querySelector('.teacher-name').textContent = data.teacherName || 'غير متوفر'; // ADDED: Teacher name
+        this.modal.querySelector('.teacher-name').textContent = data.teacherName || 'غير متوفر';
+        this.modal.querySelector('.material-name').textContent = data.materialName || 'غير متوفر';
+        this.modal.querySelector('.center-name').textContent = data.centerName || 'غير متوفر';
         this.modal.style.display = 'flex';
         setTimeout(() => this.modal.classList.add('active'), 10);
     }

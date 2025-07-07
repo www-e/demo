@@ -24,6 +24,7 @@ export function renderTable(students) {
             <td class="p-3 text-slate-700 cursor-pointer">${GRADE_NAMES[student.grade] || ''}</td>
             <td class="p-3 text-slate-700 cursor-pointer">${groupTime}</td>
             <td class="p-3 text-slate-700 cursor-pointer">${student.teacher?.name || 'عام'}</td>
+            <td class="p-3 text-slate-700 cursor-pointer">${student.material?.name || 'عامة'}</td>
             <td class="p-3 text-slate-700 text-left font-mono" dir="ltr">
                 <a href="https://wa.me/20${student.student_phone.substring(1)}" target="_blank" class="hover:underline text-green-600 font-semibold" onclick="event.stopPropagation();"><i class="fab fa-whatsapp"></i> ${student.student_phone}</a>
             </td>

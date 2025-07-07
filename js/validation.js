@@ -18,9 +18,13 @@ const rules = {
         message: 'يرجى اختيار الصف الدراسي.'
     },
     // UPDATED: Replaced 'group' and 'time' with a single rule for the combined dropdown.
-    groupTime: {
+    material: {
         validate: value => value !== '',
-        message: 'يرجى اختيار المجموعة والموعد.'
+        message: 'يرجى اختيار المادة الدراسية.'
+    },
+    center: {
+        validate: value => value !== '',
+        message: 'يرجى اختيار المركز.'
     },
 };
 

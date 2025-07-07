@@ -14,6 +14,7 @@ export function createTableHandler(elements, onEdit, onDelete) {
         
         // 3. Reset the dropdown filters in the UI
         elements.teacherFilterSelect.value = 'all';
+        elements.materialFilterSelect.value = 'all'; // ADDED
         elements.groupFilterSelect.value = 'all';
     }
 
@@ -35,6 +36,11 @@ export function createTableHandler(elements, onEdit, onDelete) {
             }
         }
 
+        // Apply Material Filter
+        if (elements.materialFilterSelect.value !== 'all') {
+            dataToRender = dataToRender.filter(s => s.material_id === elements.materialFilterSelect.value);
+        }
+
         // Apply Group Filter
         if (elements.groupFilterSelect.value !== 'all') {
             dataToRender = dataToRender.filter(s => s.group_name === elements.groupFilterSelect.value);
@@ -53,14 +59,15 @@ export function createTableHandler(elements, onEdit, onDelete) {
         dataToRender.forEach((s, index) => {
             if (!s.is_active) return;
             const colorClass = gradeColors[s.grade] || '';
-            const actionButtonsHTML = `<button class="btn-action edit" data-group="${s.group_name}" data-grade="${s.grade}" data-teacher="${s.teacher_id || ''}" title="تعديل"><i class="fas fa-edit"></i></button><button class="btn-action delete" data-id="${s.id}" title="حذف"><i class="fas fa-trash-alt"></i></button>`;
+            const actionButtonsHTML = `<button class="btn-action edit" data-group="${s.group_name}" data-grade="${s.grade}" data-teacher="${s.teacher_id || ''}" data-material="${s.material_id || ''}" title="تعديل"><i class="fas fa-edit"></i></button><button class="btn-action delete" data-id="${s.id}" title="حذف"><i class="fas fa-trash-alt"></i></button>`;
             
             const groupTimeHTML = `<strong>${s.group_name}</strong><br><span class="time-tag">${convertTo12HourArabic(s.time_slot)}</span>`;
             const teacherName = s.teacher?.name || 'عام (متاح للجميع)';
-            const desktopRowHTML = `<tr class="${colorClass}"><td class="text-center">${index + 1}</td><td><span class="badge ${colorClass}">${translateGrade(s.grade)}</span></td><td>${groupTimeHTML}</td><td>${teacherName}</td><td>${new Date(s.created_at).toLocaleDateString('ar-EG')}</td><td><div class="action-buttons">${actionButtonsHTML}</div></td></tr>`;
+            const materialName = s.material?.name || 'عامة';
+            const desktopRowHTML = `<tr class="${colorClass}"><td class="text-center">${index + 1}</td><td><span class="badge ${colorClass}">${translateGrade(s.grade)}</span></td><td>${groupTimeHTML}</td><td>${teacherName}</td><td>${materialName}</td><td>${new Date(s.created_at).toLocaleDateString('ar-EG')}</td><td><div class="action-buttons">${actionButtonsHTML}</div></td></tr>`;
             elements.tableBody.insertAdjacentHTML('beforeend', desktopRowHTML);
 
-            const mobileCardHTML = `<div class="mobile-card ${colorClass}"><div class="card-header"><span class="group-name">${s.group_name} - ${convertTo12HourArabic(s.time_slot)}</span><span class="badge ${colorClass}">${translateGrade(s.grade)}</span></div><div class="card-body-grid"><div class="card-row"><span class="card-label">المدرس:</span><span class="card-value">${teacherName}</span></div></div><div class="card-footer action-buttons">${actionButtonsHTML}</div></div>`;
+            const mobileCardHTML = `<div class="mobile-card ${colorClass}"><div class="card-header"><span class="group-name">${s.group_name} - ${convertTo12HourArabic(s.time_slot)}</span><span class="badge ${colorClass}">${translateGrade(s.grade)}</span></div><div class="card-body-grid"><div class="card-row"><span class="card-label">المدرس:</span><span class="card-value">${teacherName}</span></div><div class="card-row"><span class="card-label">المادة:</span><span class="card-value">${materialName}</span></div></div><div class="card-footer action-buttons">${actionButtonsHTML}</div></div>`;
             elements.mobileCardView.insertAdjacentHTML('beforeend', mobileCardHTML);
         });
     }
@@ -79,6 +86,7 @@ export function createTableHandler(elements, onEdit, onDelete) {
         currentGradeFilter = e.target.dataset.grade;
         
         elements.teacherFilterSelect.value = 'all';
+        elements.materialFilterSelect.value = 'all'; // ADDED
         elements.groupFilterSelect.value = 'all';
 
         populateGroupFilter(allSchedules);

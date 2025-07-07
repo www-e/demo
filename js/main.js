@@ -2,6 +2,8 @@
 import { GRADE_NAMES } from './config.js';
 import { getAvailableGroupTimes, submitRegistration, loadSchedulesFromDB } from './services/registration-service.js';
 import { fetchTeachers } from './services/teacher-service.js'; // ADDED: Import teacher service
+import { fetchMaterials } from './services/material-service.js'; // ADDED: Import material service
+import { fetchCenters } from './services/center-service.js'; // ADDED: Import center service
 import { initDropdowns, updateSelectOptions } from './ui/dropdowns.js';
 import { SuccessModal, ThirdGradeModal, RestrictedGroupsModal, DuplicateRegistrationModal } from './ui/modals.js';
 import { validateForm, initRealtimeValidation } from './validation.js';
@@ -24,6 +26,8 @@ document.addEventListener('DOMContentLoaded', async () => {
     // --- DOM Elements ---
     const gradeSelect = form.querySelector('#grade');
     const teacherSelect = form.querySelector('#teacher'); // ADDED: Teacher select element
+    const materialSelect = form.querySelector('#material'); // ADDED: Material select element
+    const centerSelect = form.querySelector('#center'); // ADDED: Center select element
     const groupTimeSelect = form.querySelector('#groupTime');
     const submitBtn = form.querySelector('.submit-btn');
 
@@ -42,22 +46,35 @@ document.addEventListener('DOMContentLoaded', async () => {
     // MODIFIED: Load both schedules and teachers
     await Promise.all([
         loadSchedulesFromDB(),
-        loadTeachers()
+        loadTeachers(),
+        loadMaterials(), // ADDED: Load materials
+        loadCenters() // ADDED: Load centers
     ]);
     
     console.log("Schedules and teachers loaded and ready.");
 
     // ADDED: Load Teachers function
-    async function loadTeachers() {
+    async function loadMaterials() {
         try {
-            const teachers = await fetchTeachers();
-            // FIXED: Use `text` instead of `label` for property name
-            updateSelectOptions(teacherSelect, teachers.map(teacher => ({
-                value: teacher.id,
-                text: teacher.name 
-            })), 'اختر المدرس');
+            const materials = await fetchMaterials();
+            updateSelectOptions(materialSelect, materials.map(material => ({
+                value: material.id,
+                text: material.name 
+            })), 'اختر المادة');
         } catch (error) {
-            console.error('Error loading teachers:', error);
+            console.error('Error loading materials:', error);
+        }
+    }
+
+    async function loadCenters() {
+        try {
+            const centers = await fetchCenters();
+            updateSelectOptions(centerSelect, centers.map(center => ({
+                value: center.id,
+                text: center.name 
+            })), 'اختر المركز');
+        } catch (error) {
+            console.error('Error loading centers:', error);
         }
     }
 
@@ -70,7 +87,11 @@ document.addEventListener('DOMContentLoaded', async () => {
     });
 
     // ADDED: Teacher select change event
-    teacherSelect.addEventListener('change', () => {
+    centerSelect.addEventListener('change', () => {
+        updateGroupTimeOptions();
+    });
+
+    materialSelect.addEventListener('change', () => {
         updateGroupTimeOptions();
     });
 
@@ -78,7 +99,9 @@ document.addEventListener('DOMContentLoaded', async () => {
     function updateGroupTimeOptions() {
         const grade = gradeSelect.value;
         const teacherId = teacherSelect.value;
-        const groupTimes = getAvailableGroupTimes(grade, teacherId);
+        const materialId = materialSelect.value; // ADDED
+        const centerId = centerSelect.value; // ADDED
+        const groupTimes = getAvailableGroupTimes(grade, teacherId, materialId, centerId); // MODIFIED
         
         // FIXED: `getAvailableGroupTimes` already returns the correct format.
         // No need to re-map the array. This fixes the empty/white dropdown issue.
@@ -110,7 +133,9 @@ document.addEventListener('DOMContentLoaded', async () => {
                 student_phone: formData.get('student_phone'),
                 parent_phone: formData.get('parent_phone'),
                 grade: formData.get('grade'),
-                teacher_id: formData.get('teacher'), // ADDED: Include teacher_id
+                teacher_id: formData.get('teacher'),
+                material_id: formData.get('material'), // ADDED
+                center_id: formData.get('center'), // ADDED
                 days_group: days_group,
                 time_slot: time_slot
             };
@@ -126,7 +151,9 @@ document.addEventListener('DOMContentLoaded', async () => {
                     gradeName: GRADE_NAMES[registrationData.grade],
                     groupName: registrationData.days_group,
                     timeName: convertTo12HourFormat(registrationData.time_slot),
-                    teacherName: selectedTeacher // ADDED: Include teacher name
+                    teacherName: selectedTeacher, // ADDED: Include teacher name
+                    materialName: selectedMaterial, // ADDED: Include material name
+                    centerName: selectedCenter // ADDED: Include center name
                 });
                 
                 form.reset();
@@ -158,6 +185,26 @@ document.addEventListener('DOMContentLoaded', async () => {
             const teachers = await fetchTeachers();
             const teacher = teachers.find(t => t.id === teacherId);
             return teacher ? teacher.name : 'غير محدد';
+        } catch (error) {
+            return 'غير محدد';
+        }
+    }
+
+    async function getMaterialName(materialId) {
+        try {
+            const materials = await fetchMaterials();
+            const material = materials.find(m => m.id === materialId);
+            return material ? material.name : 'غير محدد';
+        } catch (error) {
+            return 'غير محدد';
+        }
+    }
+
+    async function getCenterName(centerId) {
+        try {
+            const centers = await fetchCenters();
+            const center = centers.find(c => c.id === centerId);
+            return center ? center.name : 'غير محدد';
         } catch (error) {
             return 'غير محدد';
         }

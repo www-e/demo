@@ -167,6 +167,7 @@ async function generatePdf(scope, clickedButton) {
             
             // CORRECTED LINE: Use optional chaining to safely get the teacher's name
             const teacherName = student.teacher?.name || '—'; 
+            const materialName = student.material?.name || '—'; // ADDED
 
             return `
                 <tr>
@@ -175,6 +176,7 @@ async function generatePdf(scope, clickedButton) {
                     <td>${gradeNamesMap[student.grade] || ''}</td>
                     <td>${groupTime}</td>
                     <td>${teacherName}</td>
+                    <td>${materialName}</td>
                     <td class="ltr-cell">${student.student_phone}</td>
                     <td class="ltr-cell">${student.parent_phone}</td>
                     <td>${registrationDate}</td>
