@@ -6,7 +6,6 @@ import { convertTo12HourFormat, formatFullDate } from './helpers.js';
 export function renderTable(students) {
     const tableBody = document.getElementById('students-table-body');
     if (!students || students.length === 0) {
-        // FIXED: colspan is 11 to match the new number of columns
         tableBody.innerHTML = `<tr><td colspan="11" class="p-8 text-center text-gray-400">لا يوجد طلاب يطابقون هذا البحث.</td></tr>`;
         return;
     }
@@ -15,14 +14,18 @@ export function renderTable(students) {
         const groupTime = [student.days_group, timeFormatted].filter(val => val && val !== '—').join(' - ') || '—';
         const globalIndex = (currentPage - 1) * STUDENTS_PER_PAGE + index + 1;
         
+        // FIXED: Check if the teacher is inactive to apply a warning style
+        const isTeacherInactive = student.teacher && !student.teacher.is_active;
+        const warningClass = isTeacherInactive ? 'text-red-500 font-bold' : '';
+
         return `
         <tr class="hover:bg-gray-100 border-b border-gray-200 text-sm" data-id="${student.id}">
             <td class="p-3 text-center text-slate-600 cursor-pointer">${globalIndex}</td>
             <td class="p-3 font-semibold text-slate-800 cursor-pointer">${student.student_name}</td>
             <td class="p-3 text-slate-700 cursor-pointer">${GRADE_NAMES[student.grade] || ''}</td>
             <td class="p-3 text-slate-700 cursor-pointer">${student.center?.name || 'عام'}</td>
-            <td class="p-3 text-slate-700 cursor-pointer">${groupTime}</td>
-            <td class="p-3 text-slate-700 cursor-pointer">${student.teacher?.name || 'عام'}</td>
+            <td class="p-3 text-slate-700 cursor-pointer ${warningClass}">${groupTime}</td>
+            <td class="p-3 text-slate-700 cursor-pointer ${warningClass}">${student.teacher?.name || 'عام'}</td>
             <td class="p-3 text-slate-700 cursor-pointer">${student.material?.name || 'عامة'}</td>
             <td class="p-3 text-slate-700 text-left font-mono" dir="ltr">
                 <a href="https://wa.me/20${student.student_phone.substring(1)}" target="_blank" class="hover:underline text-green-600 font-semibold" onclick="event.stopPropagation();"><i class="fab fa-whatsapp"></i> ${student.student_phone}</a>

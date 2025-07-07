@@ -4,13 +4,12 @@ import { populateSelect } from './ui-helpers.js';
 export function createFormManager(elements, timeBuilder) {
 
     function populateTeacherSelects(teachers) {
-        const generalTeacher = teachers.find(t => t.name.includes('عام'));
-        const otherTeachers = teachers.filter(t => !t.name.includes('عام'));
-
-        const formOptions = [
-            { v: generalTeacher ? generalTeacher.id : '', t: 'عام (متاح للجميع)' },
-            ...otherTeachers.map(teacher => ({ v: teacher.id, t: teacher.name }))
-        ];
+        // FIXED: Disable inactive teachers in the form dropdown
+        const formOptions = teachers.map(teacher => ({ 
+            v: teacher.id, 
+            t: teacher.name,
+            disabled: !teacher.is_active // Add a disabled flag for inactive teachers
+        }));
         populateSelect(elements.teacherSelect, formOptions, 'اختر المدرس...');
     }
 
@@ -42,7 +41,7 @@ export function createFormManager(elements, timeBuilder) {
     return {
         populateTeacherSelects,
         populateMaterialSelects,
-        populateCenterSelects, // ADDED
+        populateCenterSelects,
         resetForm,
         initializeBaseUIDropdowns
     };
