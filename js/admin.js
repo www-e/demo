@@ -1,7 +1,7 @@
 // js/admin.js
-import { initializeUpdateModal } from '../components/update-modal.js';
+import { initializeUpdateModal } from './components/update-modal.js'; // FIXED PATH
 import { initializePageLoader } from './pages/admin/page-loader.js';
-import { fetchStudents, getGradeCounts } from './pages/admin/supabase-client.js';
+import { getGradeCounts } from './pages/admin/supabase-client.js';
 import { fetchMaterials } from './services/material-service.js';
 import { fetchTeachers } from './services/teacher-service.js';
 import { fetchCenters } from './services/center-service.js';
@@ -29,7 +29,9 @@ async function populateFilterDropdowns() {
         materials.forEach(m => materialFilter.innerHTML += `<option value="${m.id}">${m.name}</option>`);
 
         teacherFilter.innerHTML = '<option value="all">كل المدرسين</option>';
-        teachers.forEach(t => teacherFilter.innerHTML += `<option value="${t.id}">${t.name}</option>`);
+        teachers.forEach(t => {
+            if (t.is_active) teacherFilter.innerHTML += `<option value="${t.id}">${t.name}</option>`
+        });
         
         centerFilter.innerHTML = '<option value="all">كل المراكز</option>';
         centers.forEach(c => centerFilter.innerHTML += `<option value="${c.id}">${c.name}</option>`);

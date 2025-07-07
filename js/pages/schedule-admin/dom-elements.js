@@ -4,15 +4,15 @@ export const elements = {
     formTitle: document.getElementById('formTitle'),
     gradeSelect: document.getElementById('grade'),
     materialSelect: document.getElementById('material'),
-    centerSelect: document.getElementById('center'), // ADDED
-    teacherSelect: document.getElementById('teacher'), // ADDED
+    centerSelect: document.getElementById('center'),
+    teacherSelect: document.getElementById('teacher'),
     addMaterialBtn: document.getElementById('addMaterialBtn'),
-    addTeacherBtn: document.getElementById('addTeacherBtn'), // ADDED
+    addTeacherBtn: document.getElementById('addTeacherBtn'),
     groupNameSelect: document.getElementById('group_name_select'),
     groupNameCustomInput: document.getElementById('group_name_custom'),
     saveBtn: document.getElementById('saveBtn'),
     cancelBtn: document.getElementById('cancelBtn'),
-    tableBody: document.querySelector('#schedulesTable tbody') || document.getElementById('tableBody'),
+    tableBody: document.getElementById('schedulesTableBody'),
     mobileCardView: document.getElementById('mobileCardView'),
     loader: document.getElementById('loader'),
     schedulesTableContainer: document.getElementById('schedulesTableContainer'),
@@ -26,7 +26,7 @@ export const elements = {
     groupFilterSelect: document.getElementById('groupFilter'),
     teacherFilterSelect: document.getElementById('teacherFilter'),
     materialFilterSelect: document.getElementById('materialFilter'),
-    centerFilterSelect: document.getElementById('centerFilter'), // ADDED
+    centerFilterSelect: document.getElementById('centerFilter'),
     confirmationModal: new bootstrap.Modal(document.getElementById('confirmationModal')),
     confirmationModalTitle: document.getElementById('confirmationModalTitle'),
     confirmationModalBody: document.getElementById('confirmationModalBody'),
