@@ -1,15 +1,17 @@
 // js/admin.js
-import { initializeUpdateModal } from './components/update-modal.js'; // FIXED PATH
+import { initializeUpdateModal } from './components/update-modal.js';
 import { initializePageLoader } from './pages/admin/page-loader.js';
-import { getGradeCounts } from './pages/admin/supabase-client.js';
-import { fetchMaterials } from './services/material-service.js';
-import { fetchTeachers } from './services/teacher-service.js';
-import { fetchCenters } from './services/center-service.js';
+import { allStudents, currentFilter } from './pages/admin/state.js'; // Added state imports
 import { setStudentDetailModal, setDeleteConfirmationModal } from './pages/admin/state.js';
 import { setupEventListeners } from './pages/admin/event-handlers.js';
 import { renderFilterCards } from './pages/admin/filter-cards.js';
 import { applyFilters } from './pages/admin/filters.js';
-import { hideLoading, showToast } from './pages/admin/helpers.js';
+import { hideLoading, showToast, convertTo12HourFormat } from './pages/admin/helpers.js'; // Added time formatter
+import { fetchMaterials } from './services/material-service.js';
+import { fetchTeachers } from './services/teacher-service.js';
+import { fetchCenters } from './services/center-service.js';
+import { initializePdfPrinter } from '../features/pdf-printer.js'; // ADDED: Import for PDF feature
+import { GRADE_NAMES } from './pages/admin/constants.js'; // ADDED: Import for PDF feature
 
 initializePageLoader();
 
@@ -52,6 +54,15 @@ document.addEventListener('DOMContentLoaded', async () => {
         await renderFilterCards();
         await applyFilters();
         setupEventListeners();
+
+        // ADDED: Initialize the PDF printer after everything else is ready.
+        initializePdfPrinter(
+            allStudents,
+            currentFilter,
+            GRADE_NAMES,
+            convertTo12HourFormat
+        );
+
     } catch (error) {
         console.error('Error initializing admin page:', error);
         showToast('فشل في تحميل بيانات الطلاب.', 'error');

@@ -1,12 +1,14 @@
 // js/main.js
 import { GRADE_NAMES } from './config.js';
-import { getAvailableGroupTimes, submitRegistration, loadSchedulesFromDB } from './services/registration-service.js';
+import { submitRegistration, loadSchedulesFromDB } from './services/registration-service.js';
 import { fetchTeachers } from './services/teacher-service.js';
 import { fetchMaterials } from './services/material-service.js';
 import { fetchCenters } from './services/center-service.js';
 import { initDropdowns, updateSelectOptions } from './ui/dropdowns.js';
 import { SuccessModal, ThirdGradeModal, RestrictedGroupsModal, DuplicateRegistrationModal } from './ui/modals.js';
 import { validateForm, initRealtimeValidation } from './validation.js';
+
+let allSchedules = [];
 
 // Helper to format 24-hour time to 12-hour Arabic format
 const convertTo12HourFormat = (time24) => {
@@ -31,7 +33,6 @@ document.addEventListener('DOMContentLoaded', async () => {
     const groupTimeSelect = form.querySelector('#groupTime');
     const submitBtn = form.querySelector('.submit-btn');
 
-    // --- Modal Instances ---
     const modals = {
         success: new SuccessModal(),
         thirdGrade: new ThirdGradeModal(),
@@ -39,13 +40,11 @@ document.addEventListener('DOMContentLoaded', async () => {
         duplicate: new DuplicateRegistrationModal()
     };
     
-    // --- Initialize UI ---
     initDropdowns();
     initRealtimeValidation(form);
     
     // --- Initial Data Loading ---
     try {
-        // Load all data concurrently for faster page load
         const [schedules, teachers, materials, centers] = await Promise.all([
             loadSchedulesFromDB(),
             fetchTeachers(),
@@ -53,10 +52,11 @@ document.addEventListener('DOMContentLoaded', async () => {
             fetchCenters()
         ]);
         
-        // Populate dropdowns with the fetched data
-        updateSelectOptions(teacherSelect, teachers.filter(t => t.is_active).map(t => ({ value: t.id, text: t.name })), 'اختر المدرس');
-        updateSelectOptions(materialSelect, materials.map(m => ({ value: m.id, text: m.name })), 'اختر المادة');
+        allSchedules = schedules;
+        
         updateSelectOptions(centerSelect, centers.map(c => ({ value: c.id, text: c.name })), 'اختر المركز');
+        // The other dropdowns will be populated by our new smart function
+        updateAvailableOptions();
 
     } catch (error) {
         console.error('Error loading initial data:', error);
@@ -65,34 +65,79 @@ document.addEventListener('DOMContentLoaded', async () => {
     
     console.log("Schedules and dropdown data loaded and ready.");
 
-    // --- Event Listeners & Logic ---
-    gradeSelect.addEventListener('change', () => {
-        if (gradeSelect.value === 'third') {
-            modals.thirdGrade.show();
+    // --- NEW: Smart Dropdown Logic ---
+    function updateAvailableOptions() {
+        const selectedCenter = centerSelect.value;
+        const selectedMaterial = materialSelect.value;
+        const selectedTeacher = teacherSelect.value;
+        const selectedGrade = gradeSelect.value;
+
+        let available = allSchedules;
+
+        // 1. Filter Materials based on selected Center
+        if (selectedCenter) {
+            available = available.filter(s => s.center_id === selectedCenter);
         }
-        updateGroupTimeOptions();
-    });
+        const materialOptions = [...new Map(available.map(s => [s.material.id, s.material])).values()]
+            .map(m => ({ value: m.id, text: m.name }));
+        updateSelectOptions(materialSelect, materialOptions, 'اختر المادة');
+        materialSelect.value = selectedMaterial; // Restore selection if still valid
 
-    teacherSelect.addEventListener('change', updateGroupTimeOptions);
-    materialSelect.addEventListener('change', updateGroupTimeOptions);
-    centerSelect.addEventListener('change', updateGroupTimeOptions);
+        // 2. Filter Teachers based on Center and Material
+        if (selectedMaterial) {
+            available = available.filter(s => s.material_id === selectedMaterial);
+        }
+        const teacherOptions = [...new Map(available.map(s => [s.teacher.id, s.teacher])).values()]
+            .filter(t => t.is_active) // Only show active teachers
+            .map(t => ({ value: t.id, text: t.name }));
+        updateSelectOptions(teacherSelect, teacherOptions, 'اختر المدرس');
+        teacherSelect.value = selectedTeacher; // Restore selection
 
-    function updateGroupTimeOptions() {
-        const grade = gradeSelect.value;
-        const teacherId = teacherSelect.value;
-        const materialId = materialSelect.value;
-        const centerId = centerSelect.value;
-        const groupTimes = getAvailableGroupTimes(grade, teacherId, materialId, centerId);
+        // 3. Filter Grades based on previous selections
+        if (selectedTeacher) {
+            available = available.filter(s => s.teacher_id === selectedTeacher);
+        }
+        const gradeOptions = [...new Set(available.map(s => s.grade))].map(g => ({
+            value: g,
+            text: GRADE_NAMES[g]
+        }));
+        updateSelectOptions(gradeSelect, gradeOptions, 'اختر الصف');
+        gradeSelect.value = selectedGrade; // Restore selection
+
+        // 4. Finally, populate Group/Time based on ALL previous selections
+        if (selectedGrade) {
+            available = available.filter(s => s.grade === selectedGrade);
+        }
+
+        const groupTimeOptions = available.map(s => ({
+            value: `${s.group_name}|${s.time_slot}`,
+            text: `${s.group_name} - ${convertTo12HourFormat(s.time_slot)}`
+        }));
         
-        updateSelectOptions(groupTimeSelect, groupTimes, 'اختر المجموعة والموعد');
-        groupTimeSelect.disabled = !groupTimes.length;
+        updateSelectOptions(groupTimeSelect, groupTimeOptions, 'اختر المجموعة والموعد');
+        groupTimeSelect.disabled = !groupTimeOptions.length;
     }
+
+    // --- Event Listeners ---
+    centerSelect.addEventListener('change', updateAvailableOptions);
+    materialSelect.addEventListener('change', updateAvailableOptions);
+    teacherSelect.addEventListener('change', updateAvailableOptions);
+    gradeSelect.addEventListener('change', updateAvailableOptions);
 
     form.addEventListener('submit', async (e) => {
         e.preventDefault();
 
-        const isFormValid = validateForm(form);
-        if (!isFormValid) {
+        // FIXED: Handle 400 Bad Request by validating group_time selection first
+        const formData = new FormData(form);
+        if (!formData.get('group_time')) {
+            alert('يرجى اختيار مجموعة وموعد قبل التسجيل.');
+            // Highlight the group/time dropdown
+            const groupTimeContainer = document.getElementById('groupTimeContainer');
+            groupTimeContainer.querySelector('.selected-option')?.classList.add('invalid');
+            return;
+        }
+
+        if (!validateForm(form)) {
             console.log("Validation failed. Form submission stopped.");
             return;
         }
@@ -101,9 +146,7 @@ document.addEventListener('DOMContentLoaded', async () => {
         submitBtn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> جاري التسجيل...';
         
         try {
-            const formData = new FormData(form);
             const combinedValue = formData.get('group_time');
-            
             const [days_group, time_slot] = combinedValue.split('|');
             const registrationData = {
                 student_name: formData.get('student_name'),
@@ -120,26 +163,20 @@ document.addEventListener('DOMContentLoaded', async () => {
             const result = await submitRegistration(registrationData);
 
             if (result.success) {
-                const selectedTeacher = teacherSelect.options[teacherSelect.selectedIndex].text;
-                const selectedMaterial = materialSelect.options[materialSelect.selectedIndex].text;
-                const selectedCenter = centerSelect.options[centerSelect.selectedIndex].text;
-                
                 modals.success.show({
                     studentName: registrationData.student_name,
                     gradeName: GRADE_NAMES[registrationData.grade],
                     groupName: registrationData.days_group,
                     timeName: convertTo12HourFormat(registrationData.time_slot),
-                    teacherName: selectedTeacher,
-                    materialName: selectedMaterial,
-                    centerName: selectedCenter
+                    teacherName: teacherSelect.options[teacherSelect.selectedIndex].text,
+                    materialName: materialSelect.options[materialSelect.selectedIndex].text,
+                    centerName: centerSelect.options[centerSelect.selectedIndex].text
                 });
                 
                 form.reset();
-                initDropdowns(); // Re-initialize dropdowns to reset their display text
-                updateGroupTimeOptions(); 
-                
+                initDropdowns(); 
+                updateAvailableOptions();
                 document.querySelectorAll('.invalid').forEach(el => el.classList.remove('invalid'));
-                document.querySelectorAll('.validation-message').forEach(el => el.style.display = 'none');
 
             } else {
                 if (result.errorCode === 'DUPLICATE_STUDENT') {
@@ -148,8 +185,7 @@ document.addEventListener('DOMContentLoaded', async () => {
                     modals.restricted.show();
                 }
             }
-        } catch (error)
-        {
+        } catch (error) {
             console.error('Submission failed:', error);
             alert('حدث خطأ غير متوقع. يرجى المحاولة مرة أخرى.');
         } finally {
@@ -157,7 +193,4 @@ document.addEventListener('DOMContentLoaded', async () => {
             submitBtn.innerHTML = '<i class="fas fa-paper-plane ms-2"></i> تسجيل';
         }
     });
-
-    // Initial population
-    updateGroupTimeOptions();
 });

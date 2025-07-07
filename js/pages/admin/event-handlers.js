@@ -3,7 +3,7 @@ import { currentFilter, allStudents, studentDetailModal, setCurrentFilter, setCu
 import { applyFilters } from './filters.js';
 import { renderModalContent } from './modal-manager.js';
 import { handleDeleteStudent } from './crud-operations.js';
-import { debounce } from './helpers.js';
+import { debounce, showLoading } from './helpers.js'; // Import showLoading
 import { renderFilterCards } from './filter-cards.js';
 
 export function setupEventListeners() {
@@ -37,15 +37,17 @@ export function setupEventListeners() {
     setupFilterListener('teacherFilter', 'teacher');
     setupFilterListener('materialFilter', 'material');
 
-    // Debounced search input
-    const debouncedSearch = debounce((searchQuery) => {
-        setCurrentFilter({ searchQuery });
+    // FIXED: Debounced search input with loading indicator inside
+    const debouncedSearch = debounce(() => {
+        showLoading(); // Show loading spinner only when the search is about to run
         setCurrentPage(1);
         applyFilters();
     }, 300);
 
     document.getElementById('search-input').addEventListener('input', e => {
-        debouncedSearch(e.target.value);
+        // We update the state immediately, but the API call is debounced.
+        setCurrentFilter({ searchQuery: e.target.value });
+        debouncedSearch();
     });
 
     // Table interactions
