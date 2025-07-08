@@ -149,7 +149,16 @@ export class MaterialModal {
                 showToast('تمت إضافة المادة بنجاح', 'success');
             }
             this.resetForm();
-            if (this.onMaterialSaved) this.onMaterialSaved();
+            let result;
+            if (this.isEditMode) {
+                result = await updateMaterial(this.currentMaterialId, { name });
+                showToast('تم تحديث المادة بنجاح', 'success');
+            } else {
+                result = await createMaterial({ name });
+                showToast('تمت إضافة المادة بنجاح', 'success');
+            }
+            this.resetForm();
+            if (this.onMaterialSaved) this.onMaterialSaved(result); // Pass the saved material data back
         } catch (error) {
             const errorMessage = error.code === '23505' ? 'اسم المادة موجود بالفعل' : 'حدث خطأ أثناء الحفظ';
             showToast(errorMessage, 'error');

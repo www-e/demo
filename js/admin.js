@@ -63,7 +63,6 @@ document.addEventListener('DOMContentLoaded', async () => {
 
     try {
         await populateFilterDropdowns();
-        await renderFilterCards();
         await applyFilters();
         setupEventListeners();
         
@@ -78,7 +77,7 @@ document.addEventListener('DOMContentLoaded', async () => {
         console.error('Error initializing admin page:', error);
         showToast('فشل في تحميل بيانات الطلاب.', 'error');
         document.getElementById('students-table-body').innerHTML = 
-            `<tr><td colspan="11" class="p-8 text-center text-red-500">فشل في تحميل البيانات. تأكد من صلاحيات الوصول (RLS).</td></tr>`;
+            `<tr><td colspan="12" class="p-8 text-center text-red-500">فشل في تحميل البيانات. تأكد من صلاحيات الوصول (RLS).</td></tr>`;
     } finally {
         hideLoading();
     }

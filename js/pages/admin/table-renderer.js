@@ -6,7 +6,7 @@ import { convertTo12HourFormat, formatFullDate } from './helpers.js';
 export function renderTable(students) {
     const tableBody = document.getElementById('students-table-body');
     if (!students || students.length === 0) {
-        tableBody.innerHTML = `<tr><td colspan="11" class="p-8 text-center text-gray-400">لا يوجد طلاب يطابقون هذا البحث.</td></tr>`;
+        tableBody.innerHTML = `<tr><td colspan="12" class="p-8 text-center text-gray-400">لا يوجد طلاب يطابقون هذا البحث.</td></tr>`;
         return;
     }
     tableBody.innerHTML = students.map((student, index) => {
@@ -22,6 +22,7 @@ export function renderTable(students) {
         <tr class="hover:bg-gray-100 border-b border-gray-200 text-sm" data-id="${student.id}">
             <td class="p-3 text-center text-slate-600 cursor-pointer">${globalIndex}</td>
             <td class="p-3 font-semibold text-slate-800 cursor-pointer">${student.student_name}</td>
+            <td class="p-3 text-slate-700 cursor-pointer text-center font-mono" dir="ltr">${student.transaction_id || '—'}</td>
             <td class="p-3 text-slate-700 cursor-pointer">${GRADE_NAMES[student.grade] || ''}</td>
             <td class="p-3 text-slate-700 cursor-pointer">${student.center?.name || 'عام'}</td>
             <td class="p-3 text-slate-700 cursor-pointer ${warningClass}">${groupTime}</td>

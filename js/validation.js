@@ -13,6 +13,11 @@ const rules = {
         validate: value => /^01[0125]\d{8}$/.test(value),
         message: 'رقم ولي الأمر يجب أن يكون 11 رقماً ويبدأ بـ 010, 011, 012, أو 015.'
     },
+    transactionId: {
+        validate: value => value.trim() !== '',
+        message: 'رقم المعاملة لا يجب أن يكون فارغًا.'
+    },
+
     grade: {
         validate: value => value !== '',
         message: 'يرجى اختيار الصف الدراسي.'

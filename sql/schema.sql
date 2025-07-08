@@ -60,6 +60,7 @@ CREATE TABLE public.registrations_2025_2026 (
     id UUID DEFAULT gen_random_uuid() PRIMARY KEY,
     student_name TEXT NOT NULL,
     student_phone TEXT NOT NULL,
+    transaction_id TEXT NOT NULL,
     parent_phone TEXT NOT NULL,
     grade grade_level NOT NULL,
     center_id UUID REFERENCES public.centers(id) ON DELETE SET NULL,       -- ADDED
@@ -145,3 +146,86 @@ GRANT EXECUTE ON FUNCTION public.delete_material_and_reassign(uuid) TO anon;
 GRANT EXECUTE ON FUNCTION public.delete_teacher_and_reassign(uuid) TO anon;
 
 SELECT 'Schema setup and RPC functions are complete.' AS status;
+-- Step 12: Create an RPC function for efficient, combined student fetching.
+CREATE OR REPLACE FUNCTION get_filtered_students_with_counts(
+    p_grade text,
+    p_teacher_id uuid,
+    p_material_id uuid,
+    p_center_id uuid,
+    p_search_query text,
+    p_page integer,
+    p_page_size integer
+)
+RETURNS json AS $$
+DECLARE
+    v_offset integer;
+    v_total_count integer;
+    v_first_grade_count integer;
+    v_second_grade_count integer;
+    v_third_grade_count integer;
+    v_page_data json;
+BEGIN
+    v_offset := (p_page - 1) * p_page_size;
+
+    -- Create a temporary table to hold the results of the initial filtered query
+    CREATE TEMP TABLE filtered_students AS
+    SELECT * FROM public.registrations_2025_2026
+    WHERE
+        (p_grade = 'all' OR grade = p_grade::grade_level)
+    AND (p_teacher_id IS NULL OR teacher_id = p_teacher_id)
+    AND (p_material_id IS NULL OR material_id = p_material_id)
+    AND (p_center_id IS NULL OR center_id = p_center_id)
+    AND (
+        p_search_query IS NULL OR p_search_query = '' OR
+        student_name ILIKE '%' || p_search_query || '%' OR
+        student_phone ILIKE '%' || p_search_query || '%' OR
+        parent_phone ILIKE '%' || p_search_query || '%'
+    );
+
+    -- Get all counts from the temporary table in one go
+    SELECT
+        COUNT(*),
+        COUNT(*) FILTER (WHERE grade = 'first'),
+        COUNT(*) FILTER (WHERE grade = 'second'),
+        COUNT(*) FILTER (WHERE grade = 'third')
+    INTO
+        v_total_count,
+        v_first_grade_count,
+        v_second_grade_count,
+        v_third_grade_count
+    FROM filtered_students;
+
+    -- Get the paginated data
+    SELECT json_agg(t) INTO v_page_data FROM (
+        SELECT r.*,
+               json_build_object('id', c.id, 'name', c.name) as center,
+               json_build_object('id', m.id, 'name', m.name) as material,
+               json_build_object('id', t.id, 'name', t.name, 'is_active', t.is_active) as teacher
+        FROM filtered_students r
+        LEFT JOIN public.centers c ON r.center_id = c.id
+        LEFT JOIN public.materials m ON r.material_id = m.id
+        LEFT JOIN public.teachers t ON r.teacher_id = t.id
+        ORDER BY r.created_at DESC
+        LIMIT p_page_size
+        OFFSET v_offset
+    ) t;
+
+    -- Drop the temporary table
+    DROP TABLE filtered_students;
+
+    -- Return everything in a single JSON object
+    RETURN json_build_object(
+        'page_data', COALESCE(v_page_data, '[]'::json),
+        'total_count', v_total_count,
+        'grade_counts', json_build_object(
+            'all', v_total_count,
+            'first', v_first_grade_count,
+            'second', v_second_grade_count,
+            'third', v_third_grade_count
+        )
+    );
+END;
+$$ LANGUAGE plpgsql;
+
+-- Grant execute permissions on the new function
+GRANT EXECUTE ON FUNCTION public.get_filtered_students_with_counts(text, uuid, uuid, uuid, text, integer, integer) TO anon;

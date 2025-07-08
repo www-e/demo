@@ -1,8 +1,8 @@
 // js/constants.js
-export const GRADE_NAMES = { 
-    'first': 'الصف الأول', 
-    'second': 'الصف الثاني', 
-    'third': 'الصف الثالث' 
+export const GRADE_NAMES = {
+    'first': 'الصف الأول الثانوي',
+    'second': 'الصف الثاني الثانوي',
+    'third': 'الصف الثالث الثانوي'
 };
 
 export const GRADE_COLORS = { 

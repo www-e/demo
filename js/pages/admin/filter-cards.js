@@ -1,14 +1,18 @@
 // js/pages/admin/filter-cards.js
 import { currentFilter } from './state.js';
-import { getGradeCounts } from './supabase-client.js';
+// No longer need getGradeCounts from supabase-client
 
-export async function renderFilterCards() {
+export async function renderFilterCards(counts) { // Accepts counts as an argument
     const container = document.getElementById('stats-section').querySelector('.grid');
     
+    // If counts are not provided, it means we need to fetch them (initial load).
+    // This is now handled by applyFilters(), so this function is simpler.
+    if (!counts) {
+        // This can be left empty or show a loading state, as applyFilters will call it with data.
+        return; 
+    }
+
     try {
-        // FIXED: Pass the entire filter object
-        const counts = await getGradeCounts(currentFilter);
-        
         const cardsData = [
             { grade: 'all', label: 'إجمالي الطلاب', count: counts.all, icon: 'fa-users', color: 'violet' },
             { grade: 'first', label: 'الصف الأول', count: counts.first, icon: 'fa-child', color: 'blue' },

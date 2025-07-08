@@ -134,7 +134,16 @@ export class TeacherModal {
                 showToast('تم إضافة المدرس بنجاح', 'success');
             }
             this.resetForm();
-            if (this.onTeacherSaved) this.onTeacherSaved();
+            let result;
+            if (this.isEditMode) {
+                result = await updateTeacher(this.currentTeacherId, { name });
+                showToast('تم تحديث المدرس بنجاح', 'success');
+            } else {
+                result = await createTeacher({ name });
+                showToast('تم إضافة المدرس بنجاح', 'success');
+            }
+            this.resetForm();
+            if (this.onTeacherSaved) this.onTeacherSaved(result);
         } catch (error) {
             const errorMessage = error.code === '23505' ? 'اسم المدرس موجود بالفعل' : 'حدث خطأ أثناء الحفظ';
             showToast(errorMessage, 'error');

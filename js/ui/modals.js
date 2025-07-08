@@ -85,6 +85,10 @@ export class SuccessModal {
                     <span class="receipt-value student-name"></span>
                 </div>
                 <div class="receipt-data-row">
+                    <span class="receipt-label"><i class="fas fa-hashtag"></i> رقم المعاملة</span>
+                    <span class="receipt-value transaction-id" style="direction: ltr; text-align: left;"></span>
+                </div>
+                <div class="receipt-data-row">
                     <span class="receipt-label"><i class="fas fa-graduation-cap"></i> الصف</span>
                     <span class="receipt-value grade-name"></span>
                 </div>
@@ -121,6 +125,7 @@ export class SuccessModal {
     }
     show(data) {
         this.modal.querySelector('.student-name').textContent = data.studentName || 'غير متوفر';
+        this.modal.querySelector('.transaction-id').textContent = data.transactionId || 'غير متوفر';
         this.modal.querySelector('.grade-name').textContent = data.gradeName || 'غير متوفر';
         this.modal.querySelector('.group-name').textContent = data.groupName || 'غير متوفر';
         this.modal.querySelector('.time-name').textContent = data.timeName || 'غير متوفر';

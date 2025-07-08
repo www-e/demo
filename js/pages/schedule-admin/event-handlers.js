@@ -105,12 +105,26 @@ export function createEventHandlers({ elements, state, timeBuilder, teacherModal
     }
 
     function setupTeacherModalListeners() {
-        teacherModal.onSaved(async () => {
+        teacherModal.onSaved(async (updatedTeacher) => { // The modal now gives us the new/updated teacher
             teacherModal.hide();
-            await loadAndRenderAllData();
+            // SMART UPDATE: No full reload. Just update the local state.
+            const teachers = state.getTeachers();
+            const index = teachers.findIndex(t => t.id === updatedTeacher.id);
+            if (index > -1) {
+                teachers[index] = updatedTeacher; // Update existing
+            } else {
+                teachers.push(updatedTeacher); // Add new
+            }
+            state.setTeachers(teachers);
+            
+            // Re-render only what's necessary
+            formManager.populateTeacherSelects(state.getTeachers());
+            tableHandler.populateFilterDropdowns(state.getSchedules(), state.getTeachers(), state.getMaterials(), state.getCenters());
         });
 
         teacherModal.onDelete(async (teacher) => {
+            // This action (safe delete) affects multiple tables, so a reload is still the safest and simplest approach here.
+            // This is an acceptable trade-off as deleting a teacher is an infrequent operation.
             teacherModal.hide();
             showConfirmation({
                 modal: { instance: elements.confirmationModal, title: elements.confirmationModalTitle, body: elements.confirmationModalBody, confirmBtn: elements.confirmActionBtn },
@@ -122,7 +136,7 @@ export function createEventHandlers({ elements, state, timeBuilder, teacherModal
                     try {
                         await deleteAndReassignTeacher(teacher.id);
                         showToast('تم حذف المدرس ونقل الطلاب والمجموعات بنجاح.', 'success');
-                        await loadAndRenderAllData();
+                        await loadAndRenderAllData(); // Reload is acceptable here.
                     } catch (error) {
                         showToast('خطأ في الحذف: ' + error.message, 'error');
                     }
@@ -136,12 +150,26 @@ export function createEventHandlers({ elements, state, timeBuilder, teacherModal
     }
 
     function setupMaterialModalListeners() {
-        materialModal.onSaved(async () => {
+        materialModal.onSaved(async (updatedMaterial) => { // The modal gives us the new/updated material
             materialModal.hide();
-            await loadAndRenderAllData();
+            // SMART UPDATE
+            const materials = state.getMaterials();
+            const index = materials.findIndex(m => m.id === updatedMaterial.id);
+            if (index > -1) {
+                materials[index] = updatedMaterial; // Update
+            } else {
+                materials.push(updatedMaterial); // Add
+            }
+            state.setMaterials(materials);
+
+            // Re-render only what's necessary
+            formManager.populateMaterialSelects(state.getMaterials());
+            tableHandler.populateFilterDropdowns(state.getSchedules(), state.getTeachers(), state.getMaterials(), state.getCenters());
         });
 
         materialModal.onDelete(async (material) => {
+            // Safe delete also affects multiple tables, so a reload is the simplest, safest approach.
+            // Deleting a material is also infrequent.
             materialModal.hide();
             showConfirmation({
                 modal: { instance: elements.confirmationModal, title: elements.confirmationModalTitle, body: elements.confirmationModalBody, confirmBtn: elements.confirmActionBtn },
@@ -153,7 +181,7 @@ export function createEventHandlers({ elements, state, timeBuilder, teacherModal
                     try {
                         await deleteAndReassignMaterial(material.id);
                         showToast('تم حذف المادة ونقل المجموعات بنجاح.', 'success');
-                        await loadAndRenderAllData();
+                        await loadAndRenderAllData(); // Reload is acceptable here.
                     } catch (error) {
                         showToast('خطأ في الحذف: ' + error.message, 'error');
                     }

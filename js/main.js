@@ -1,5 +1,5 @@
 // js/main.js
-import { GRADE_NAMES } from './config.js';
+import { GRADE_NAMES } from './pages/admin/constants.js';
 import { submitRegistration, loadSchedulesFromDB } from './services/registration-service.js';
 import { fetchTeachers } from './services/teacher-service.js';
 import { fetchMaterials } from './services/material-service.js';
@@ -131,6 +131,7 @@ document.addEventListener('DOMContentLoaded', async () => {
                 student_name: formData.get('student_name'),
                 student_phone: formData.get('student_phone'),
                 parent_phone: formData.get('parent_phone'),
+                transaction_id: formData.get('transaction_id'),
                 grade: formData.get('grade'),
                 teacher_id: formData.get('teacher'),
                 material_id: formData.get('material'),
@@ -144,6 +145,7 @@ document.addEventListener('DOMContentLoaded', async () => {
             if (result.success) {
                 modals.success.show({
                     studentName: registrationData.student_name,
+                    transactionId: registrationData.transaction_id,
                     gradeName: GRADE_NAMES[registrationData.grade],
                     groupName: registrationData.days_group,
                     timeName: convertTo12HourFormat(registrationData.time_slot),

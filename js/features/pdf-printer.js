@@ -158,6 +158,7 @@ async function generatePdf(scope, clickedButton) {
                 <tr>
                     <td>${index + 1}</td>
                     <td>${student.student_name}</td>
+                    <td class="ltr-cell">${student.transaction_id || '—'}</td>
                     <td>${gradeNamesMap[student.grade] || ''}</td>
                     <td>${centerName}</td>
                     <td>${groupTime}</td>
