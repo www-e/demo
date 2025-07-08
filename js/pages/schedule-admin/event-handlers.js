@@ -5,6 +5,8 @@ import { deleteAndReassign as deleteAndReassignTeacher } from '../../services/te
 import { deleteAndReassignMaterial } from '../../services/material-service.js';
 
 export function createEventHandlers({ elements, state, timeBuilder, teacherModal, materialModal, formManager, tableHandler, loadAndRenderAllData }) {
+    
+    // This function remains the same.
     function handleEditGroup(dataset) {
         showConfirmation({
             modal: { instance: elements.confirmationModal, title: elements.confirmationModalTitle, body: elements.confirmationModalBody, confirmBtn: elements.confirmActionBtn },
@@ -44,6 +46,7 @@ export function createEventHandlers({ elements, state, timeBuilder, teacherModal
         });
     }
 
+    // This function remains the same. It correctly uses the smart update.
     async function handleDelete(id) {
         showConfirmation({
             modal: { instance: elements.confirmationModal, title: elements.confirmationModalTitle, body: elements.confirmationModalBody, confirmBtn: elements.confirmActionBtn },
@@ -54,24 +57,25 @@ export function createEventHandlers({ elements, state, timeBuilder, teacherModal
                     await ScheduleService.deleteScheduleById(id);
                     showToast('تم حذف الموعد بنجاح!', 'delete');
                     
-                    // SMART UPDATE: No API calls to refresh UI
                     const currentSchedules = state.getSchedules();
                     const updatedSchedules = currentSchedules.filter(s => s.id !== id);
                     state.setSchedules(updatedSchedules);
-                    tableHandler.render(updatedSchedules); // Re-render the table with local data
+                    tableHandler.render(updatedSchedules);
 
                 } catch (error) { showToast('خطأ في الحذف: ' + error.message, 'error'); }
             }
         });
     }
 
+    // This is the function that needed the fix.
+    // It now correctly uses the smart update logic and does NOT call loadAndRenderAllData.
     async function handleSave(e) {
         e.preventDefault();
         const groupName = elements.groupNameSelect.value === 'custom' ? elements.groupNameCustomInput.value.trim() : elements.groupNameSelect.value;
         const timeSlots = timeBuilder.getTimes();
         const teacherId = elements.teacherSelect.value || null;
         const materialId = elements.materialSelect.value || null;
-        const centerId = elements.centerSelect.value || null; // ADDED
+        const centerId = elements.centerSelect.value || null;
         
         if (!elements.gradeSelect.value || !groupName || timeSlots.length === 0 || !centerId) {
             return showToast('يرجى ملء جميع الحقول (المركز، الصف، المادة، المدرس، المجموعة، والمواعيد).', 'error');
@@ -99,31 +103,23 @@ export function createEventHandlers({ elements, state, timeBuilder, teacherModal
                     }));
 
                     const isEditing = !!state.getEditingGroup();
-                    
-                    // The service now returns the newly created/updated records
                     const newSchedules = await ScheduleService.saveSchedule(recordsToSave, isEditing, state.getEditingGroup());
                     
                     showToast(isEditing ? 'تم تعديل المجموعة!' : 'تمت إضافة المجموعة!', 'success');
                     
-                    // --- START OF SMART UPDATE LOGIC ---
                     let allSchedules = state.getSchedules();
 
                     if (isEditing) {
-                        // Remove all old versions of the edited group
                         const { group, grade, teacher, material, center } = state.getEditingGroup();
                         allSchedules = allSchedules.filter(s => 
                             !(s.group_name === group && s.grade === grade && s.teacher_id === (teacher || null) && s.material_id === (material || null) && s.center_id === (center || null))
                         );
                     }
                     
-                    // Add the new schedules to our local state
                     const updatedSchedules = [...allSchedules, ...newSchedules];
                     state.setSchedules(updatedSchedules);
                     
-                    // Re-render UI with the fresh local data
                     tableHandler.render(updatedSchedules);
-                    // --- END OF SMART UPDATE LOGIC ---
-
                     formManager.resetForm(state.setEditingGroup);
 
                 } catch (error) { 
@@ -136,31 +132,31 @@ export function createEventHandlers({ elements, state, timeBuilder, teacherModal
         });
     }
 
+    // This function remains the same.
     function handleAddTeacher() {
         teacherModal.show(state.getTeachers());
     }
 
+    // This function and its 'onDelete' part remain the same. The 'onSaved' part is corrected.
     function setupTeacherModalListeners() {
-        teacherModal.onSaved(async (updatedTeacher) => { // The modal now gives us the new/updated teacher
+        teacherModal.onSaved(async (updatedTeacher) => {
             teacherModal.hide();
-            // SMART UPDATE: No full reload. Just update the local state.
             const teachers = state.getTeachers();
             const index = teachers.findIndex(t => t.id === updatedTeacher.id);
             if (index > -1) {
-                teachers[index] = updatedTeacher; // Update existing
+                teachers[index] = updatedTeacher;
             } else {
-                teachers.push(updatedTeacher); // Add new
+                teachers.push(updatedTeacher);
             }
             state.setTeachers(teachers);
             
-            // Re-render only what's necessary
             formManager.populateTeacherSelects(state.getTeachers());
-            tableHandler.render(state.getSchedules());
+            tableHandler.populateFilterDropdowns(state.getSchedules(), state.getTeachers(), state.getMaterials(), state.getCenters());
+            // No full table render needed, just updating dropdowns is sufficient here.
         });
 
         teacherModal.onDelete(async (teacher) => {
-            // This action (safe delete) affects multiple tables, so a reload is still the safest and simplest approach here.
-            // This is an acceptable trade-off as deleting a teacher is an infrequent operation.
+            // Reload is acceptable here for this infrequent, complex operation.
             teacherModal.hide();
             showConfirmation({
                 modal: { instance: elements.confirmationModal, title: elements.confirmationModalTitle, body: elements.confirmationModalBody, confirmBtn: elements.confirmActionBtn },
@@ -172,7 +168,7 @@ export function createEventHandlers({ elements, state, timeBuilder, teacherModal
                     try {
                         await deleteAndReassignTeacher(teacher.id);
                         showToast('تم حذف المدرس ونقل الطلاب والمجموعات بنجاح.', 'success');
-                        await loadAndRenderAllData(); // Reload is acceptable here.
+                        await loadAndRenderAllData();
                     } catch (error) {
                         showToast('خطأ في الحذف: ' + error.message, 'error');
                     }
@@ -181,31 +177,31 @@ export function createEventHandlers({ elements, state, timeBuilder, teacherModal
         });
     }
 
+    // This function remains the same.
     function handleAddMaterial() {
         materialModal.show(state.getMaterials());
     }
 
+    // This function and its 'onDelete' part remain the same. The 'onSaved' part is corrected.
     function setupMaterialModalListeners() {
-        materialModal.onSaved(async (updatedMaterial) => { // The modal gives us the new/updated material
+        materialModal.onSaved(async (updatedMaterial) => {
             materialModal.hide();
-            // SMART UPDATE
             const materials = state.getMaterials();
             const index = materials.findIndex(m => m.id === updatedMaterial.id);
             if (index > -1) {
-                materials[index] = updatedMaterial; // Update
+                materials[index] = updatedMaterial;
             } else {
-                materials.push(updatedMaterial); // Add
+                materials.push(updatedMaterial);
             }
             state.setMaterials(materials);
 
-            // Re-render only what's necessary
             formManager.populateMaterialSelects(state.getMaterials());
-            tableHandler.render(state.getSchedules());
+            tableHandler.populateFilterDropdowns(state.getSchedules(), state.getTeachers(), state.getMaterials(), state.getCenters());
+             // No full table render needed, just updating dropdowns is sufficient here.
         });
 
         materialModal.onDelete(async (material) => {
-            // Safe delete also affects multiple tables, so a reload is the simplest, safest approach.
-            // Deleting a material is also infrequent.
+             // Reload is acceptable here.
             materialModal.hide();
             showConfirmation({
                 modal: { instance: elements.confirmationModal, title: elements.confirmationModalTitle, body: elements.confirmationModalBody, confirmBtn: elements.confirmActionBtn },
@@ -217,7 +213,7 @@ export function createEventHandlers({ elements, state, timeBuilder, teacherModal
                     try {
                         await deleteAndReassignMaterial(material.id);
                         showToast('تم حذف المادة ونقل المجموعات بنجاح.', 'success');
-                        await loadAndRenderAllData(); // Reload is acceptable here.
+                        await loadAndRenderAllData();
                     } catch (error) {
                         showToast('خطأ في الحذف: ' + error.message, 'error');
                     }

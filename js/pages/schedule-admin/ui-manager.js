@@ -18,7 +18,7 @@ export function createFormManager(elements, timeBuilder) {
     function populateMaterialSelects(materials) {
         const filteredMaterials = materials.filter(m => m.name !== 'عامة');
         const materialOptions = filteredMaterials.map(material => ({ v: material.id, t: material.name }));
-        populateSelect(elements.materialSelect, [{v: '', t: 'عامة (بدون مادة معينة)'}, ...materialOptions], 'اختر المادة...');
+        populateSelect(elements.materialSelect, materialOptions, 'اختر المادة...');
     }
     
     function populateCenterSelects(centers) {
