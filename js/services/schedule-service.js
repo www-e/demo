@@ -30,7 +30,6 @@ export async function deleteScheduleById(id) {
     if (error) throw error;
 }
 
-// MODIFIED: Updated to handle all new fields correctly on edit
 export async function saveSchedule(records, isEditing, oldGroupData) {
     if (isEditing && oldGroupData) {
         const { grade, group, teacher, material, center } = oldGroupData;
@@ -41,7 +40,6 @@ export async function saveSchedule(records, isEditing, oldGroupData) {
             .eq('group_name', group)
             .eq('grade', grade);
             
-        // Match null or a specific ID for each field
         deleteQuery = teacher ? deleteQuery.eq('teacher_id', teacher) : deleteQuery.is('teacher_id', null);
         deleteQuery = material ? deleteQuery.eq('material_id', material) : deleteQuery.is('material_id', null);
         deleteQuery = center ? deleteQuery.eq('center_id', center) : deleteQuery.is('center_id', null);
@@ -50,6 +48,18 @@ export async function saveSchedule(records, isEditing, oldGroupData) {
         if (deleteError) throw deleteError;
     }
     
-    const { error: insertError } = await supabase.from('schedules').insert(records);
+    // MODIFIED: Added .select() and the return statement
+    const { data, error: insertError } = await supabase
+        .from('schedules')
+        .insert(records)
+        .select(`
+            *,
+            teacher:teachers(id, name),
+            material:materials(id, name),
+            center:centers(id, name)
+        `); // Fetch the newly created records with their relations
+
     if (insertError) throw insertError;
+
+    return data; // Return the new records
 }

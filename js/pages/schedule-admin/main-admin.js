@@ -66,7 +66,12 @@ document.addEventListener('DOMContentLoaded', () => {
             showLoader(elements.loader, elements.schedulesTableContainer, false);
         }
     }
-
+    // 1. Create the tableHandler first, as eventHandlers will depend on it.
+    // We pass temporary stubs for the onEdit/onDelete callbacks for now.
+    tableHandler = createTableHandler(elements, 
+        (dataset) => eventHandlers.handleEditGroup(dataset),
+        (id) => eventHandlers.handleDelete(id)
+    );
     // --- Create Event Handlers (dependencies are injected) ---
     eventHandlers = createEventHandlers({
         elements,
@@ -75,6 +80,7 @@ document.addEventListener('DOMContentLoaded', () => {
         teacherModal,
         materialModal,
         formManager,
+        tableHandler,
         loadAndRenderAllData // Pass the refresh function
     });
 

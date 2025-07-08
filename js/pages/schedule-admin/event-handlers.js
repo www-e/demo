@@ -4,8 +4,7 @@ import * as ScheduleService from '../../services/schedule-service.js';
 import { deleteAndReassign as deleteAndReassignTeacher } from '../../services/teacher-service.js';
 import { deleteAndReassignMaterial } from '../../services/material-service.js';
 
-export function createEventHandlers({ elements, state, timeBuilder, teacherModal, materialModal, formManager, loadAndRenderAllData }) {
-
+export function createEventHandlers({ elements, state, timeBuilder, teacherModal, materialModal, formManager, tableHandler, loadAndRenderAllData }) {
     function handleEditGroup(dataset) {
         showConfirmation({
             modal: { instance: elements.confirmationModal, title: elements.confirmationModalTitle, body: elements.confirmationModalBody, confirmBtn: elements.confirmActionBtn },
@@ -54,7 +53,13 @@ export function createEventHandlers({ elements, state, timeBuilder, teacherModal
                 try {
                     await ScheduleService.deleteScheduleById(id);
                     showToast('تم حذف الموعد بنجاح!', 'delete');
-                    await loadAndRenderAllData();
+                    
+                    // SMART UPDATE: No API calls to refresh UI
+                    const currentSchedules = state.getSchedules();
+                    const updatedSchedules = currentSchedules.filter(s => s.id !== id);
+                    state.setSchedules(updatedSchedules);
+                    tableHandler.render(updatedSchedules); // Re-render the table with local data
+
                 } catch (error) { showToast('خطأ في الحذف: ' + error.message, 'error'); }
             }
         });
@@ -78,23 +83,54 @@ export function createEventHandlers({ elements, state, timeBuilder, teacherModal
             body: `هل أنت متأكد من حفظ مجموعة "${groupName}"؟`,
             confirmText: 'نعم، حفظ', btnClass: 'btn-primary',
             onConfirm: async () => {
-                const records = timeSlots.map(time => ({ 
-                    grade: elements.gradeSelect.value, 
-                    group_name: groupName, 
-                    time_slot: time,
-                    teacher_id: teacherId,
-                    material_id: materialId,
-                    center_id: centerId // ADDED
-                }));
-                
+                const saveBtn = elements.saveBtn;
+                const originalBtnHTML = saveBtn.innerHTML;
+                saveBtn.disabled = true;
+                saveBtn.innerHTML = '<span class="spinner-border spinner-border-sm" role="status" aria-hidden="true"></span> جار الحفظ...';
+
                 try {
+                    const recordsToSave = timeSlots.map(time => ({ 
+                        grade: elements.gradeSelect.value, 
+                        group_name: groupName, 
+                        time_slot: time,
+                        teacher_id: teacherId,
+                        material_id: materialId,
+                        center_id: centerId
+                    }));
+
                     const isEditing = !!state.getEditingGroup();
-                    await ScheduleService.saveSchedule(records, isEditing, state.getEditingGroup());
+                    
+                    // The service now returns the newly created/updated records
+                    const newSchedules = await ScheduleService.saveSchedule(recordsToSave, isEditing, state.getEditingGroup());
+                    
                     showToast(isEditing ? 'تم تعديل المجموعة!' : 'تمت إضافة المجموعة!', 'success');
+                    
+                    // --- START OF SMART UPDATE LOGIC ---
+                    let allSchedules = state.getSchedules();
+
+                    if (isEditing) {
+                        // Remove all old versions of the edited group
+                        const { group, grade, teacher, material, center } = state.getEditingGroup();
+                        allSchedules = allSchedules.filter(s => 
+                            !(s.group_name === group && s.grade === grade && s.teacher_id === (teacher || null) && s.material_id === (material || null) && s.center_id === (center || null))
+                        );
+                    }
+                    
+                    // Add the new schedules to our local state
+                    const updatedSchedules = [...allSchedules, ...newSchedules];
+                    state.setSchedules(updatedSchedules);
+                    
+                    // Re-render UI with the fresh local data
+                    tableHandler.render(updatedSchedules);
+                    // --- END OF SMART UPDATE LOGIC ---
+
                     formManager.resetForm(state.setEditingGroup);
-                    await loadAndRenderAllData();
+
                 } catch (error) { 
                     showToast(error.message.includes('unique_schedule_time') ? 'خطأ: أحد هذه المواعيد موجود بالفعل بنفس المواصفات.' : 'حدث خطأ: ' + error.message, 'error'); 
+                } finally {
+                    saveBtn.disabled = false;
+                    saveBtn.innerHTML = originalBtnHTML;
                 }
             }
         });
@@ -119,7 +155,7 @@ export function createEventHandlers({ elements, state, timeBuilder, teacherModal
             
             // Re-render only what's necessary
             formManager.populateTeacherSelects(state.getTeachers());
-            tableHandler.populateFilterDropdowns(state.getSchedules(), state.getTeachers(), state.getMaterials(), state.getCenters());
+            tableHandler.render(state.getSchedules());
         });
 
         teacherModal.onDelete(async (teacher) => {
@@ -164,7 +200,7 @@ export function createEventHandlers({ elements, state, timeBuilder, teacherModal
 
             // Re-render only what's necessary
             formManager.populateMaterialSelects(state.getMaterials());
-            tableHandler.populateFilterDropdowns(state.getSchedules(), state.getTeachers(), state.getMaterials(), state.getCenters());
+            tableHandler.render(state.getSchedules());
         });
 
         materialModal.onDelete(async (material) => {
