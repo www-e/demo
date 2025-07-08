@@ -126,14 +126,6 @@ export class TeacherModal {
         saveBtn.innerHTML = '<i class="fas fa-spinner fa-spin"></i>';
 
         try {
-            if (this.isEditMode) {
-                await updateTeacher(this.currentTeacherId, { name });
-                showToast('تم تحديث المدرس بنجاح', 'success');
-            } else {
-                await createTeacher({ name });
-                showToast('تم إضافة المدرس بنجاح', 'success');
-            }
-            this.resetForm();
             let result;
             if (this.isEditMode) {
                 result = await updateTeacher(this.currentTeacherId, { name });

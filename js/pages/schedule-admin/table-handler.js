@@ -59,11 +59,14 @@ export function createTableHandler(elements, onEdit, onDelete) {
         });
     }
 
-    // FIXED: This function now exists and populates all necessary filters.
     function populateFilterDropdowns(schedules, teachers, materials, centers) {
-        populateSelect(elements.centerFilterSelect, [{v:'all', t:'كل المراكز'}, ...centers.map(c => ({v: c.id, t: c.name}))]);
-        populateSelect(elements.teacherFilterSelect, [{v:'all', t:'كل المدرسين'}, ...teachers.map(t => ({v: t.id, t: t.name}))]);
-        populateSelect(elements.materialFilterSelect, [{v:'all', t:'كل المواد'}, ...materials.map(m => ({v: m.id, t: m.name}))]);
+        const filteredCenters = centers.filter(c => c.name !== 'عام');
+        const filteredTeachers = teachers.filter(t => t.name !== 'عام');
+        const filteredMaterials = materials.filter(m => m.name !== 'عامة');
+
+        populateSelect(elements.centerFilterSelect, [{v:'all', t:'كل المراكز'}, ...filteredCenters.map(c => ({v: c.id, t: c.name}))]);
+        populateSelect(elements.teacherFilterSelect, [{v:'all', t:'كل المدرسين'}, ...filteredTeachers.map(t => ({v: t.id, t: t.name}))]);
+        populateSelect(elements.materialFilterSelect, [{v:'all', t:'كل المواد'}, ...filteredMaterials.map(m => ({v: m.id, t: m.name}))]);
         populateGroupFilter(schedules);
     }
     

@@ -51,7 +51,8 @@ document.addEventListener('DOMContentLoaded', async () => {
         
         allSchedules = schedules;
         
-        updateSelectOptions(centerSelect, centers.map(c => ({ value: c.id, text: c.name })), 'اختر المركز');
+        const filteredCenters = centers.filter(c => c.name !== 'عام');
+updateSelectOptions(centerSelect, filteredCenters.map(c => ({ value: c.id, text: c.name })), 'اختر المركز');
         updateAvailableOptions();
 
     } catch (error) {
@@ -68,7 +69,8 @@ document.addEventListener('DOMContentLoaded', async () => {
             available = available.filter(s => s.center_id === centerSelect.value);
         }
         const materialOptions = [...new Map(available.map(s => [s.material.id, s.material])).values()]
-            .map(m => ({ value: m.id, text: m.name }));
+            .map(m => ({ value: m.id, text: m.name }))
+            .filter(m => m.text !== 'عامة');
         updateSelectOptions(materialSelect, materialOptions, 'اختر المادة');
 
         if (materialSelect.value) {
@@ -76,7 +78,8 @@ document.addEventListener('DOMContentLoaded', async () => {
         }
         const teacherOptions = [...new Map(available.map(s => [s.teacher.id, s.teacher])).values()]
             .filter(t => t.is_active)
-            .map(t => ({ value: t.id, text: t.name }));
+            .map(t => ({ value: t.id, text: t.name }))
+            .filter(t => t.text !== 'عام');
         updateSelectOptions(teacherSelect, teacherOptions, 'اختر المدرس');
 
         if (teacherSelect.value) {

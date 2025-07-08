@@ -29,9 +29,11 @@ export function showLoader(loader, container, show) {
     if (container) container.style.display = show ? 'none' : 'block';
 }
 
-// FIXED: Now supports a 'disabled' property for options
-export function populateSelect(select, options, placeholder) {
-    select.innerHTML = `<option value="" disabled selected>${placeholder}</option>`;
+export function populateSelect(select, options, placeholder = null) {
+    select.innerHTML = ''; // Start with a clean slate
+    if (placeholder) {
+        select.innerHTML = `<option value="" disabled selected>${placeholder}</option>`;
+    }
     options.forEach(opt => {
         const optionEl = document.createElement('option');
         optionEl.value = opt.v;
@@ -42,5 +44,9 @@ export function populateSelect(select, options, placeholder) {
         }
         select.appendChild(optionEl);
     });
-    select.value = "";
+    if (!placeholder) {
+        select.value = options.length > 0 ? options[0].v : "";
+    } else {
+        select.value = "";
+    }
 }

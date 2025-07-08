@@ -141,14 +141,6 @@ export class MaterialModal {
         saveBtn.innerHTML = '<i class="fas fa-spinner fa-spin"></i>';
 
         try {
-            if (this.isEditMode) {
-                await updateMaterial(this.currentMaterialId, { name });
-                showToast('تم تحديث المادة بنجاح', 'success');
-            } else {
-                await createMaterial({ name });
-                showToast('تمت إضافة المادة بنجاح', 'success');
-            }
-            this.resetForm();
             let result;
             if (this.isEditMode) {
                 result = await updateMaterial(this.currentMaterialId, { name });

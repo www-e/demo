@@ -52,6 +52,32 @@ export function setupEventListeners() {
 
     // Table interactions
     document.getElementById('students-table-body').addEventListener('click', e => {
+        const copyEl = e.target.closest('.transaction-id-copy');
+        if (copyEl) {
+            e.stopPropagation(); // Prevent the modal from opening
+            const textToCopy = copyEl.innerText.trim();
+            const icon = copyEl.querySelector('i');
+
+            navigator.clipboard.writeText(textToCopy).then(() => {
+                // Success feedback
+                const originalIcon = icon.className;
+                icon.className = 'fas fa-check fa-fw ml-2 text-green-500'; // Change to checkmark
+                
+                // Optional: Show a "Copied!" tooltip. We can add a simple one.
+                const originalTitle = copyEl.title;
+                copyEl.title = 'تم النسخ!';
+
+                setTimeout(() => {
+                    icon.className = originalIcon; // Revert icon
+                    copyEl.title = originalTitle; // Revert title
+                }, 1500); // Revert after 1.5 seconds
+
+            }).catch(err => {
+                console.error('Failed to copy text: ', err);
+                alert('فشل نسخ النص.');
+            });
+            return; // Stop further processing
+        }
         const deleteButton = e.target.closest('.btn-action.delete');
         if (deleteButton) {
             e.stopPropagation();

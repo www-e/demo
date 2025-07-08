@@ -22,7 +22,12 @@ export function renderTable(students) {
         <tr class="hover:bg-gray-100 border-b border-gray-200 text-sm" data-id="${student.id}">
             <td class="p-3 text-center text-slate-600 cursor-pointer">${globalIndex}</td>
             <td class="p-3 font-semibold text-slate-800 cursor-pointer">${student.student_name}</td>
-            <td class="p-3 text-slate-700 cursor-pointer text-center font-mono" dir="ltr">${student.transaction_id || '—'}</td>
+                        <td class="p-3 text-center font-mono" dir="ltr">
+                <span class="transaction-id-copy text-blue-600 hover:text-blue-800 font-semibold cursor-pointer" title="اضغط للنسخ">
+                    ${student.transaction_id || '—'}
+                    <i class="fas fa-copy fa-fw ml-2 text-gray-400"></i>
+                </span>
+            </td>
             <td class="p-3 text-slate-700 cursor-pointer">${GRADE_NAMES[student.grade] || ''}</td>
             <td class="p-3 text-slate-700 cursor-pointer">${student.center?.name || 'عام'}</td>
             <td class="p-3 text-slate-700 cursor-pointer ${warningClass}">${groupTime}</td>
