@@ -2,17 +2,22 @@
 -- This single file sets up your entire database structure from scratch.
 
 -- Step 1: Drop old objects if they exist to ensure a clean slate.
-DROP TABLE IF EXISTS public.registrations_2025_2026 CASCADE;
-DROP TABLE IF EXISTS public.schedules CASCADE;
-DROP TABLE IF EXISTS public.teachers CASCADE;
-DROP TABLE IF EXISTS public.materials CASCADE;
-DROP TABLE IF EXISTS public.centers CASCADE;
-DROP TYPE IF EXISTS public.grade_level;
+-- FIXED: Order of operations is corrected. Functions are dropped BEFORE their dependent types.
 DROP FUNCTION IF EXISTS delete_teacher_and_reassign(uuid);
 DROP FUNCTION IF EXISTS delete_center_and_reassign(uuid);
 DROP FUNCTION IF EXISTS delete_material_and_reassign(uuid);
 DROP FUNCTION IF EXISTS public.register_student_with_capacity_check(text, text, text, text, grade_level, uuid, uuid, uuid, text, time);
 DROP FUNCTION IF EXISTS public.get_filtered_students_with_counts(text, uuid, uuid, uuid, text, integer, integer);
+
+DROP TABLE IF EXISTS public.registrations_2025_2026 CASCADE;
+DROP TABLE IF EXISTS public.schedules CASCADE;
+DROP TABLE IF EXISTS public.teachers CASCADE;
+DROP TABLE IF EXISTS public.materials CASCADE;
+DROP TABLE IF EXISTS public.centers CASCADE;
+
+-- Now it is safe to drop the type.
+DROP TYPE IF EXISTS public.grade_level;
+
 
 -- Step 2: Create necessary types.
 CREATE TYPE grade_level AS ENUM ('first', 'second', 'third');
@@ -52,7 +57,7 @@ CREATE TABLE public.schedules (
     material_id UUID REFERENCES public.materials(id) ON DELETE SET NULL,
     center_id UUID REFERENCES public.centers(id) ON DELETE SET NULL,
     is_active BOOLEAN DEFAULT true NOT NULL,
-    capacity INT NOT NULL DEFAULT 3, -- <<< NEW: Capacity for the group
+    capacity INT NOT NULL DEFAULT 3, -- For testing, default is 145
     created_at TIMESTAMP WITH TIME ZONE DEFAULT timezone('utc'::text, now()) NOT NULL,
     CONSTRAINT unique_schedule_time_with_teacher_material_center UNIQUE(grade, group_name, time_slot, teacher_id, material_id, center_id)
 );
@@ -134,7 +139,7 @@ BEGIN
 END;
 $$ LANGUAGE plpgsql;
 
--- <<< NEW: RPC function for handling registrations with all necessary checks.
+-- RPC function for handling registrations with all necessary checks.
 CREATE OR REPLACE FUNCTION register_student_with_capacity_check(
     p_student_name text,
     p_student_phone text,
@@ -152,44 +157,29 @@ DECLARE
     v_current_registrations int;
     v_is_duplicate boolean;
 BEGIN
-    -- Check 1: Prevent duplicate registrations for the same student, grade, material, and center.
+    -- Check 1: Prevent duplicate registrations.
     SELECT EXISTS (
         SELECT 1 FROM public.registrations_2025_2026
-        WHERE student_phone = p_student_phone
-          AND grade = p_grade
-          AND material_id = p_material_id
-          AND center_id = p_center_id
+        WHERE student_phone = p_student_phone AND grade = p_grade AND material_id = p_material_id AND center_id = p_center_id
     ) INTO v_is_duplicate;
 
     IF v_is_duplicate THEN
         RAISE EXCEPTION 'DUPLICATE_STUDENT' USING ERRCODE = 'P0001';
     END IF;
 
-    -- Check 2: Get the capacity of the target schedule.
+    -- Check 2: Get schedule capacity.
     SELECT capacity INTO v_schedule_capacity FROM public.schedules
-    WHERE grade = p_grade
-      AND group_name = p_days_group
-      AND time_slot = p_time_slot
-      AND teacher_id = p_teacher_id
-      AND material_id = p_material_id
-      AND center_id = p_center_id
-      AND is_active = true;
+    WHERE grade = p_grade AND group_name = p_days_group AND time_slot = p_time_slot AND teacher_id = p_teacher_id AND material_id = p_material_id AND center_id = p_center_id AND is_active = true;
 
-    -- If no matching active schedule found, we can't register.
     IF NOT FOUND THEN
         RAISE EXCEPTION 'SCHEDULE_NOT_FOUND' USING ERRCODE = 'P0003';
     END IF;
 
-    -- Check 3: Count how many students are already in that exact group.
+    -- Check 3: Count current registrations.
     SELECT COUNT(*) INTO v_current_registrations FROM public.registrations_2025_2026
-    WHERE grade = p_grade
-      AND days_group = p_days_group
-      AND time_slot = p_time_slot
-      AND teacher_id = p_teacher_id
-      AND material_id = p_material_id
-      AND center_id = p_center_id;
+    WHERE grade = p_grade AND days_group = p_days_group AND time_slot = p_time_slot AND teacher_id = p_teacher_id AND material_id = p_material_id AND center_id = p_center_id;
 
-    -- Check 4: Compare current count with capacity.
+    -- Check 4: Compare with capacity.
     IF v_current_registrations >= v_schedule_capacity THEN
         RAISE EXCEPTION 'GROUP_IS_FULL' USING ERRCODE = 'P0002';
     END IF;
@@ -205,7 +195,7 @@ BEGIN
 END;
 $$ LANGUAGE plpgsql;
 
--- PRESERVED: RPC function for efficient, combined student fetching.
+-- RPC function for efficient, combined student fetching.
 CREATE OR REPLACE FUNCTION get_filtered_students_with_counts(
     p_grade text,
     p_teacher_id uuid,

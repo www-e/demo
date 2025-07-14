@@ -47,7 +47,7 @@ document.addEventListener('DOMContentLoaded', () => {
             state.setCenters(centers); // ADDED
 
             formManager.populateTeacherSelects(teachers);
-            formManager.populateMaterialSelects(materials);
+            formManager.populateMaterialSelects(materials, elements.gradeSelect.value);
             formManager.populateCenterSelects(centers); // ADDED
             
             tableHandler.populateFilterDropdowns(schedules, teachers, materials, centers);
@@ -98,7 +98,12 @@ document.addEventListener('DOMContentLoaded', () => {
         if (elements.cancelBtn) elements.cancelBtn.addEventListener('click', () => formManager.resetForm(state.setEditingGroup));
         if (elements.addTeacherBtn) elements.addTeacherBtn.addEventListener('click', eventHandlers.handleAddTeacher);
         if (elements.addMaterialBtn) elements.addMaterialBtn.addEventListener('click', eventHandlers.handleAddMaterial);
-        
+                // NEW: Add event listener to filter materials when grade changes
+        if (elements.gradeSelect) {
+            elements.gradeSelect.addEventListener('change', (e) => {
+                formManager.populateMaterialSelects(state.getMaterials(), e.target.value);
+            });
+        }
         if (elements.groupNameSelect) {
             elements.groupNameSelect.addEventListener('change', () => { 
                 elements.groupNameCustomInput.style.display = (elements.groupNameSelect.value === 'custom') ? 'block' : 'none'; 

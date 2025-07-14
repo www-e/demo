@@ -15,8 +15,18 @@ export function createFormManager(elements, timeBuilder) {
 
     }
 
-    function populateMaterialSelects(materials) {
-        const filteredMaterials = materials.filter(m => m.name !== 'عامة');
+    function populateMaterialSelects(materials, grade = null) {
+        let filteredMaterials = materials.filter(m => m.name !== 'عامة');
+
+        // NEW: Smart filtering logic based on grade
+        if (grade) {
+            if (grade === 'first') {
+                filteredMaterials = filteredMaterials.filter(m => m.name.includes('الرياضيات'));
+            } else if (grade === 'second' || grade === 'third') {
+                filteredMaterials = filteredMaterials.filter(m => m.name.includes('بحتة - تطبيقية'));
+            }
+        }
+
         const materialOptions = filteredMaterials.map(material => ({ v: material.id, t: material.name }));
         populateSelect(elements.materialSelect, materialOptions, 'اختر المادة...');
     }
