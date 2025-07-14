@@ -35,7 +35,17 @@ function createDropdown(selectElement) {
             dropdownOption.className = 'dropdown-option';
             dropdownOption.dataset.value = option.value;
             
-            dropdownOption.textContent = option.textContent;
+            // Core change: Add badge if data exists
+            const badgeText = option.dataset.badgeText;
+            const badgeClass = option.dataset.badgeClass;
+
+            let badgeHTML = '';
+            if (badgeText && badgeClass) {
+                badgeHTML = `<span class="new-badge ${badgeClass}">${badgeText}</span>`;
+            }
+            
+            // Use a span for the text to control layout
+            dropdownOption.innerHTML = `<span class="time-text">${option.textContent}</span>${badgeHTML}`;
 
             dropdownOption.addEventListener('click', e => {
                 e.stopPropagation();
@@ -72,9 +82,8 @@ export function initDropdowns() {
     document.addEventListener('keydown', e => e.key === 'Escape' && closeAllDropdowns());
 }
 
-// FIXED: This function now correctly syncs the display text with the select's current value.
 export function updateSelectOptions(select, options, placeholder) {
-    const currentValue = select.value; // Store the current value before clearing
+    const currentValue = select.value;
     select.innerHTML = `<option value="">${placeholder}</option>`;
     
     let isCurrentValueStillValid = false;
@@ -82,19 +91,25 @@ export function updateSelectOptions(select, options, placeholder) {
         const option = document.createElement('option');
         option.value = opt.value;
         option.textContent = opt.text;
+        
+        // Core change: Add badge data as data attributes
+        if (opt.badgeText) {
+            option.dataset.badgeText = opt.badgeText;
+        }
+        if (opt.badgeClass) {
+            option.dataset.badgeClass = opt.badgeClass;
+        }
+
         select.appendChild(option);
         if (opt.value === currentValue) {
             isCurrentValueStillValid = true;
         }
     });
 
-    // Restore the value if it's still a valid option, otherwise reset.
     select.value = isCurrentValueStillValid ? currentValue : "";
 
-    // Now, update the custom display to match the real select's state.
     const customSelected = select.parentElement.querySelector('.selected-option');
     if (customSelected) {
-        // Find the text of the selected option in the real select
         const selectedIndex = select.selectedIndex > -1 ? select.selectedIndex : 0;
         customSelected.textContent = select.options[selectedIndex].textContent;
     }

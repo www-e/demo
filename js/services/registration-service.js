@@ -67,26 +67,27 @@ async function checkExistingRegistration(phone, grade, materialId, centerId) {
 }
 
 export async function submitRegistration(registrationData) {
-    const exists = await checkExistingRegistration(
-        registrationData.student_phone, 
-        registrationData.grade,
-        registrationData.material_id,
-        registrationData.center_id
-    );
+    try {
+        const { error } = await supabase.rpc('register_student_with_capacity_check', registrationData);
 
-    if (exists) {
-        return { success: false, error: 'الطالب مسجل بالفعل في هذه المادة والمركز.', errorCode: 'DUPLICATE_STUDENT' };
-    }
-
-    const { error } = await supabase.from('registrations_2025_2026').insert([registrationData]);
-
-    if (error) {
-        console.error("Supabase insert error:", error);
-        if (error.code === '23505') { 
-            return { success: false, error: 'الطالب مسجل بالفعل.', errorCode: 'DUPLICATE_STUDENT' };
+        if (error) {
+            console.error("Registration failed:", error);
+            switch (error.code) {
+                case 'P0001':
+                    return { success: false, error: 'الطالب مسجل بالفعل.', errorCode: 'DUPLICATE_STUDENT' };
+                case 'P0002':
+                    return { success: false, error: 'عذرًا، هذه المجموعة ممتلئة.', errorCode: 'GROUP_FULL' };
+                case 'P0003':
+                    return { success: false, error: 'المجموعة المختارة غير متاحة.', errorCode: 'SCHEDULE_NOT_FOUND' };
+                default:
+                    return { success: false, error: 'حدث خطأ غير متوقع.', errorCode: 'UNKNOWN' };
+            }
         }
-        throw error;
-    }
 
-    return { success: true };
+        return { success: true };
+
+    } catch (error) {
+        console.error("Registration failed (general error):", error);
+        return { success: false, error: 'حدث خطأ أثناء التسجيل.', errorCode: 'UNKNOWN' };
+    }
 }

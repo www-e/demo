@@ -32,6 +32,8 @@ CREATE POLICY "Allow anonymous full access to manage schedules" ON public.schedu
 CREATE POLICY "Allow anonymous full access to registrations" ON public.registrations_2025_2026
     FOR ALL TO anon USING (true) WITH CHECK (true);
 
+-- Step 4: Grant execute permissions on RPC functions
+GRANT EXECUTE ON FUNCTION public.register_student_with_capacity_check(text, text, text, text, grade_level, uuid, uuid, uuid, text, time) TO anon;
 
 -- Confirmation message
-SELECT 'RLS policies have been set to allow full anonymous access.' AS status;
+SELECT 'RLS policies and function grants are set.' AS status;

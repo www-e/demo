@@ -265,3 +265,93 @@
         justify-content: center;
     }
 }
+/* === NEW STYLES FOR SUCCESS MODAL RECEIPT === */
+.receipt-info-group {
+    padding: var(--space-lg);
+    background: rgba(var(--primary-rgb), 0.03);
+    border: 1px solid var(--border-color);
+    border-radius: var(--radius-lg);
+    text-align: right;
+}
+
+.receipt-title {
+    font-size: var(--font-size-lg);
+    font-weight: var(--font-weight-semibold);
+    color: var(--primary);
+    margin-bottom: var(--space-base);
+    padding-bottom: var(--space-sm);
+    border-bottom: 1px solid rgba(var(--primary-rgb), 0.1);
+}
+
+.receipt-data-row {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: var(--space-md) 0;
+    border-bottom: 1px solid rgba(var(--primary-rgb), 0.05);
+}
+
+.receipt-data-row:last-of-type {
+    border-bottom: none;
+}
+
+.receipt-label {
+    color: var(--text-secondary);
+    font-size: var(--font-size-base);
+    display: flex;
+    align-items: center;
+    gap: var(--space-sm);
+}
+
+.receipt-label i {
+    color: var(--primary-light);
+}
+
+.receipt-value {
+    color: var(--text-primary);
+    font-weight: var(--font-weight-semibold);
+    font-size: var(--font-size-base);
+}
+
+.receipt-data-row.total .receipt-label {
+    color: var(--primary);
+    font-weight: var(--font-weight-bold);
+    font-size: var(--font-size-lg);
+}
+
+.receipt-data-row.total .receipt-value {
+    color: var(--primary);
+    font-weight: var(--font-weight-bold);
+    font-size: var(--font-size-xl);
+    background: rgba(var(--primary-rgb), 0.1);
+    padding: var(--space-xs) var(--space-md);
+    border-radius: var(--radius-md);
+}
+
+.confirmation-details {
+    text-align: right;
+    margin-top: 1.5rem;
+    padding: 1rem;
+    border-top: 2px dashed var(--border-color);
+    background-color: var(--warning-bg);
+    border-radius: var(--radius-lg);
+}
+.confirmation-details p {
+    margin-bottom: 0.5rem;
+    color: var(--warning-color);
+}
+
+
+@media (max-width: 767px) {
+    .receipt-data-row {
+        flex-direction: column;
+        align-items: flex-start;
+        gap: var(--space-xs);
+        padding: var(--space-base) 0;
+    }
+
+    .receipt-value {
+        align-self: flex-end;
+        font-weight: bold;
+    }
+}
