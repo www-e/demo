@@ -200,14 +200,19 @@ document.addEventListener('DOMContentLoaded', async () => {
             const result = await submitRegistration(registrationData);
 
             if (result.success) {
-                const fees = calculateFees(grade, materialName);
+                const selectedCenter = allCenters.find(c => c.id === registrationData.p_center_id);
+                const centerName = selectedCenter ? selectedCenter.name : 'غير محدد';
+
                 modals.success.show({
                     studentName: registrationData.p_student_name,
+                    studentPhone: registrationData.p_student_phone,
+                    parentPhone: registrationData.p_parent_phone,
                     gradeName: GRADE_NAMES[grade],
                     materialName: materialName,
+                    centerName: centerName,
                     groupName: days_group,
                     timeName: convertTo12HourFormat(time_slot),
-                    fees: fees
+                    transactionId: registrationData.p_transaction_id
                 });
 
                 form.reset();

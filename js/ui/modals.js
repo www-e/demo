@@ -90,7 +90,7 @@ export class SuccessModal extends BaseModal {
             <div class="info-modal-body">
                 <div class="info-icon"><i class="fas fa-check-circle" style="color: var(--success);"></i></div>
                 <h3 class="info-modal-title" style="color: var(--text-primary);">تم التسجيل بنجاح!</h3>
-                <p class="text-secondary mb-4">تم تسجيل بياناتك. يرجى مراجعة التفاصيل .</p>
+                <p class="text-secondary mb-4">تم تسجيل بياناتك. يرجى مراجعة التفاصيل.</p>
 
                 <!-- Receipt Details -->
                 <div class="receipt-info-group">
@@ -98,30 +98,29 @@ export class SuccessModal extends BaseModal {
                         <span class="receipt-label"><i class="fas fa-user"></i> اسم الطالب</span>
                         <span class="receipt-value" id="receipt-studentName"></span>
                     </div>
+                     <div class="receipt-data-row">
+                        <span class="receipt-label"><i class="fas fa-mobile-alt"></i> رقم الطالب</span>
+                        <span class="receipt-value" id="receipt-studentPhone" style="direction: ltr;"></span>
+                    </div>
+                    <div class="receipt-data-row">
+                        <span class="receipt-label"><i class="fas fa-user-shield"></i> رقم ولي الأمر</span>
+                        <span class="receipt-value" id="receipt-parentPhone" style="direction: ltr;"></span>
+                    </div>
                     <div class="receipt-data-row">
                         <span class="receipt-label"><i class="fas fa-graduation-cap"></i> الصف والمادة</span>
                         <span class="receipt-value" id="receipt-gradeMaterial"></span>
                     </div>
                     <div class="receipt-data-row">
+                        <span class="receipt-label"><i class="fas fa-building"></i> المركز</span>
+                        <span class="receipt-value" id="receipt-centerName"></span>
+                    </div>
+                    <div class="receipt-data-row">
                         <span class="receipt-label"><i class="fas fa-users"></i> المجموعة</span>
                         <span class="receipt-value" id="receipt-groupTime"></span>
                     </div>
-                </div>
-
-                <!-- Pricing Details -->
-                <div class="receipt-info-group mt-3">
-                    <h4 class="receipt-title">تفاصيل الرسوم</h4>
                     <div class="receipt-data-row">
-                        <span class="receipt-label">كرت السنتر</span>
-                        <span class="receipt-value" id="receipt-centerFee"></span>
-                    </div>
-                    <div class="receipt-data-row">
-                        <span class="receipt-label" id="receipt-materialFeeLabel">رسوم المادة</span>
-                        <span class="receipt-value" id="receipt-materialFee"></span>
-                    </div>
-                    <div class="receipt-data-row total">
-                        <span class="receipt-label">الإجمالي للدفع</span>
-                        <span class="receipt-value" id="receipt-totalFee"></span>
+                        <span class="receipt-label"><i class="fas fa-hashtag"></i> رقم المعاملة</span>
+                        <span class="receipt-value" id="receipt-transactionId" style="direction: ltr;"></span>
                     </div>
                 </div>
             </div>
@@ -132,22 +131,13 @@ export class SuccessModal extends BaseModal {
     show(data) {
         // Populate data
         document.getElementById('receipt-studentName').textContent = data.studentName;
+        document.getElementById('receipt-studentPhone').textContent = data.studentPhone;
+        document.getElementById('receipt-parentPhone').textContent = data.parentPhone;
         document.getElementById('receipt-gradeMaterial').textContent = `${data.gradeName} - ${data.materialName}`;
+        document.getElementById('receipt-centerName').textContent = data.centerName;
         document.getElementById('receipt-groupTime').textContent = `${data.groupName} - ${data.timeName}`;
-
-        // Populate fees
-        document.getElementById('receipt-centerFee').textContent = `${data.fees.centerFee} جنيه`;
-        document.getElementById('receipt-materialFee').textContent = `${data.fees.materialFee} جنيه`;
-        document.getElementById('receipt-totalFee').textContent = `${data.fees.total} جنيه`;
-
-        // Handle specific labels for 2nd/3rd year
-        const materialFeeLabel = document.getElementById('receipt-materialFeeLabel');
-        if (data.grade === 'second' || data.grade === 'third') {
-            materialFeeLabel.textContent = `رسوم (بحتة + تطبيقية)`;
-        } else {
-            materialFeeLabel.textContent = `رسوم المادة`;
-        }
-
+        document.getElementById('receipt-transactionId').textContent = data.transactionId;
+        
         super.show();
     }
 }
