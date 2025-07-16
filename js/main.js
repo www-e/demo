@@ -5,7 +5,7 @@ import { fetchTeachers } from './services/teacher-service.js';
 import { fetchMaterials } from './services/material-service.js';
 import { fetchCenters } from './services/center-service.js';
 import { initDropdowns, updateSelectOptions } from './ui/dropdowns.js';
-import { SuccessModal, ThirdGradeModal, RestrictedGroupsModal, DuplicateRegistrationModal } from './ui/modals.js';
+import { SuccessModal, ThirdGradeModal, RestrictedGroupsModal, DuplicateRegistrationModal, MathWarningModal } from './ui/modals.js';
 import { validateForm, initRealtimeValidation } from './validation.js';
 import { FeesModal } from './components/fees-modal.js';
 
@@ -65,7 +65,8 @@ document.addEventListener('DOMContentLoaded', async () => {
         success: new SuccessModal(),
         thirdGrade: new ThirdGradeModal(),
         restricted: new RestrictedGroupsModal(),
-        duplicate: new DuplicateRegistrationModal()
+        duplicate: new DuplicateRegistrationModal(),
+        mathWarning: new MathWarningModal() // Add this line
     };
 
     initDropdowns();
@@ -165,7 +166,23 @@ document.addEventListener('DOMContentLoaded', async () => {
     ui.gradeSelect.addEventListener('change', updateAvailableOptions);
     ui.materialSelect.addEventListener('change', updateAvailableOptions);
     ui.teacherSelect.addEventListener('change', updateAvailableOptions);
+    ui.materialSelect.addEventListener('change', () => {
+        const selectedGrade = ui.gradeSelect.value;
+        const selectedOption = ui.materialSelect.options[ui.materialSelect.selectedIndex];
 
+        // Ensure an option is actually selected
+        if (!selectedOption || !selectedOption.value) {
+            return;
+        }
+
+        const materialText = selectedOption.textContent;
+
+        // Check if grade is 2nd or 3rd and material is math-related
+        if ((selectedGrade === 'second' || selectedGrade === 'third') &&
+            (materialText.includes('بحته') || materialText.includes('تطبيقيه'))) {
+            modals.mathWarning.show();
+        }
+    });
     // Form submission logic remains the same
     form.addEventListener('submit', async (e) => {
         e.preventDefault();

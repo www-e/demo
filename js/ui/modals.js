@@ -80,7 +80,18 @@ export class DuplicateRegistrationModal extends BaseModal {
         super.show();
     }
 }
-
+export class MathWarningModal extends BaseModal {
+    constructor() {
+        super('math-warning-modal', `
+            <div class="info-modal-content">
+                <div class="info-modal-header"><h3 class="info-modal-title">ملاحظة هامة</h3><button class="info-modal-close"><i class="fas fa-times"></i></button></div>
+                <div class="info-modal-body">
+                    <div class="info-icon" style="color: var(--info);"><i class="fas fa-info-circle"></i></div>
+                    <p>تأكد من حجز المادتين معًا (بحتة وتطبيقية) لاستكمال تسجيل مواد الرياضيات.</p>
+                </div>
+            </div>`);
+    }
+}
 // NEW: A brand new, detailed success modal with pricing.
 export class SuccessModal extends BaseModal {
     constructor() {

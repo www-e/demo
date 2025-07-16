@@ -2,8 +2,8 @@
 
 const rules = {
     studentName: {
-        validate: value => /^[\u0600-\u06FF\s]{3,}$/.test(value),
-        message: 'يجب أن يكون الاسم 3 أحرف عربية على الأقل.'
+        validate: value => value.trim().split(/\s+/).length >= 4,
+        message: 'يجب إدخال الاسم رباعي على الأقل.'
     },
     studentPhone: {
         validate: value => /^01[0125]\d{8}$/.test(value),
