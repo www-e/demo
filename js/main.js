@@ -7,6 +7,7 @@ import { fetchCenters } from './services/center-service.js';
 import { initDropdowns, updateSelectOptions } from './ui/dropdowns.js';
 import { SuccessModal, ThirdGradeModal, RestrictedGroupsModal, DuplicateRegistrationModal } from './ui/modals.js';
 import { validateForm, initRealtimeValidation } from './validation.js';
+import { FeesModal } from './components/fees-modal.js';
 
 let allSchedules = [];
 let allMaterials = [];
@@ -45,7 +46,12 @@ function calculateFees(grade, materialName) {
 document.addEventListener('DOMContentLoaded', async () => {
     const form = document.getElementById('registrationForm');
     if (!form) return;
-
+    // Initialize the new FeesModal
+    const feesModal = new FeesModal();
+    const showFeesBtn = document.getElementById('showFeesBtn');
+    if (showFeesBtn) {
+        showFeesBtn.addEventListener('click', () => feesModal.show());
+    }
     const ui = {
         gradeSelect: form.querySelector('#grade'),
         teacherSelect: form.querySelector('#teacher'),
@@ -101,7 +107,7 @@ document.addEventListener('DOMContentLoaded', async () => {
         const gradeOptions = [...new Set(availableSchedules.map(s => s.grade))]
             .map(g => ({ value: g, text: GRADE_NAMES[g] }));
         updateSelectOptions(ui.gradeSelect, gradeOptions, 'اختر الصف');
-        
+
         const selectedGrade = ui.gradeSelect.value;
         if (selectedGrade) {
             availableSchedules = availableSchedules.filter(s => s.grade === selectedGrade);
@@ -203,7 +209,7 @@ document.addEventListener('DOMContentLoaded', async () => {
                     timeName: convertTo12HourFormat(time_slot),
                     fees: fees
                 });
-                
+
                 form.reset();
                 document.querySelectorAll('.invalid').forEach(el => el.classList.remove('invalid'));
                 initDropdowns(); // Re-initialize dropdowns to clear selections visually

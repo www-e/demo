@@ -1,6 +1,6 @@
 // A version number for our cache. Change this version number
 // anytime you update any of the cached files to force the service worker to update.
-const CACHE_VERSION = 3;
+const CACHE_VERSION = 5;
 const CACHE_NAME = `edu-center-cache-v${CACHE_VERSION}`;
 
 // A list of all the essential files (the "app shell") that we want to cache.
@@ -15,7 +15,7 @@ const APP_SHELL_URLS = [
     // --- Global CSS & Assets ---
     '/css/styles.css',
     '/css/tags.css',
-    '/assets/mohandes.png',
+    '/assets/mloky.png',
     '/assets/icons8-study-undefined-16.png',
     '/assets/icons8-study-undefined-32.png',
 
@@ -23,6 +23,7 @@ const APP_SHELL_URLS = [
     '/css/registration.css',
     '/css/modal.css',
     '/css/dropdown-fix.css',
+    '/css/fees-modal.css',
     '/js/main.js',
     '/js/validation.js',
     '/js/ui/dropdowns.js',
@@ -58,6 +59,7 @@ const APP_SHELL_URLS = [
     // --- Shared Components & Services ---
     '/js/components/material-modal.js',
     '/js/components/teacher-modal.js',
+    '/js/components/fees-modal.js',
     '/js/components/update-modal.js',
     '/js/services/center-service.js',
     '/js/services/material-service.js',

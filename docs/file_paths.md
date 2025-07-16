@@ -12,7 +12,7 @@ This document provides an organized list of all files within the project, along 
 ## assets/ (Static Assets)
 *   `assets/icons8-study-undefined-16.png`: Small icon for study-related imagery (16x16 pixels).
 *   `assets/icons8-study-undefined-32.png`: Larger icon for study-related imagery (32x32 pixels).
-*   `assets/center.png`: Image used in the form header and admin dashboards, likely a logo or branding.
+*   `assets/mloky.png`: Image used in the form header and admin dashboards, likely a logo or branding.
 
 ## css/ (Cascading Style Sheets)
 *   `css/dropdown-fix.css`: Specific CSS rules to fix styling and z-index issues for custom dropdowns.

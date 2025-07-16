@@ -1,5 +1,6 @@
 <!DOCTYPE html>
 <html lang="ar" dir="rtl" data-theme="light">
+
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
@@ -13,14 +14,21 @@
     <link rel="stylesheet" href="css/tags.css">
     <link rel="stylesheet" href="css/modal.css">
     <link rel="stylesheet" href="css/dropdown-fix.css">
+    <link rel="stylesheet" href="css/fees-modal.css">
     <link rel="manifest" href="/manifest.json">
 </head>
+
 <body>
     <div class="registration-container">
         <div class="form-header-image-container">
-            <img src="assets/mloky.png" alt="السنتر التعليمي"class="form-header-image">
+            <img src="assets/mloky.png" alt="السنتر التعليمي" class="form-header-image">
         </div>
         <h1>حجز 2025/2026</h1>
+        <div class="fees-btn-container">
+            <button type="button" id="showFeesBtn" class="fees-btn">
+                <i class="fas fa-info-circle"></i> عرض تفاصيل مصاريف الحجز
+            </button>
+        </div>
         <form id="registrationForm" class="registration-form">
             <div class="form-group">
                 <label for="studentName">اسم الطالب</label>
@@ -98,4 +106,5 @@
     <script src="js/main.js" type="module"></script>
     <script src="/js/sw-register.js"></script>
 </body>
+
 </html>
