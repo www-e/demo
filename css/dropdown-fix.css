@@ -9,6 +9,8 @@
 .form-group:nth-child(5) { z-index: 30; }
 .form-group:nth-child(6) { z-index: 25; }
 .form-group:nth-child(7) { z-index: 20; }
+.form-group:nth-child(8) { z-index: 15; }
+.form-group:nth-child(9) { z-index: 10; }
 .custom-dropdown-container {
     position: relative;
     width: 100%;
