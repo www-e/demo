@@ -15,7 +15,7 @@
     <link rel="stylesheet" href="css/modal.css">
     <link rel="stylesheet" href="css/dropdown-fix.css">
     <link rel="stylesheet" href="css/fees-modal.css">
-    <link rel="manifest" href="/manifest.json">
+    <link rel="manifest" href="manifest.json">
 </head>
 
 <body>
@@ -104,7 +104,15 @@
     <script src="https://html2canvas.hertzen.com/dist/html2canvas.min.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
     <script src="js/main.js" type="module"></script>
-    <script src="/js/sw-register.js"></script>
+    <script>
+    if ('serviceWorker' in navigator) {
+        window.addEventListener('load', () => {
+            navigator.serviceWorker.register('sw.js')
+                .then(registration => console.log('Service Worker registered successfully with scope: ', registration.scope))
+                .catch(error => console.log('Service Worker registration failed: ', error));
+        });
+    }
+</script>
 </body>
 
 </html>
