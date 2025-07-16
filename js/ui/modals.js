@@ -148,7 +148,7 @@ export class SuccessModal extends BaseModal {
         // Handle specific labels for 2nd/3rd year
         const materialFeeLabel = document.getElementById('receipt-materialFeeLabel');
         if (data.grade === 'second' || data.grade === 'third') {
-            materialFeeLabel.textContent = `رسوم (بحته + تطبيقية)`;
+            materialFeeLabel.textContent = `رسوم (بحتة + تطبيقية)`;
         } else {
             materialFeeLabel.textContent = `رسوم المادة`;
         }
