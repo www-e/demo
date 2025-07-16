@@ -8,17 +8,17 @@
     "theme_color": "#5E35B1",
     "icons": [
         {
-            "src": "/assets/icons8-study-undefined-32.png",
+            "src": "assets/icons8-study-undefined-32.png",
             "sizes": "32x32",
             "type": "image/png"
         },
         {
-            "src": "/assets/mloky.png",
+            "src": "assets/mloky.png",
             "sizes": "192x192",
             "type": "image/png"
         },
         {
-            "src": "/assets/mloky.png",
+            "src": "assets/mloky.png",
             "sizes": "512x512",
             "type": "image/png"
         }
