@@ -90,7 +90,7 @@ export class SuccessModal extends BaseModal {
             <div class="info-modal-body">
                 <div class="info-icon"><i class="fas fa-check-circle" style="color: var(--success);"></i></div>
                 <h3 class="info-modal-title" style="color: var(--text-primary);">تم التسجيل بنجاح!</h3>
-                <p class="text-secondary mb-4">تم تسجيل بياناتك مبدئيًا. يرجى مراجعة التفاصيل وتأكيد الحجز.</p>
+                <p class="text-secondary mb-4">تم تسجيل بياناتك. يرجى مراجعة التفاصيل .</p>
 
                 <!-- Receipt Details -->
                 <div class="receipt-info-group">
@@ -120,14 +120,9 @@ export class SuccessModal extends BaseModal {
                         <span class="receipt-value" id="receipt-materialFee"></span>
                     </div>
                     <div class="receipt-data-row total">
-                        <span class="receipt-label">الإجمالي المطلوب للدفع</span>
+                        <span class="receipt-label">الإجمالي للدفع</span>
                         <span class="receipt-value" id="receipt-totalFee"></span>
                     </div>
-                </div>
-
-                 <div class="confirmation-details mt-4">
-                    <h4 class="info-highlight"><i class="fas fa-exclamation-circle"></i> خطوة هامة لتأكيد الحجز</h4>
-                    <p>لإتمام التسجيل، يرجى الحضور إلى السنتر لدفع الرسوم وتأكيد الحجز.</p>
                 </div>
             </div>
         </div>`;
