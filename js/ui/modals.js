@@ -152,3 +152,60 @@ export class SuccessModal extends BaseModal {
         super.show();
     }
 }
+export class SecondMathStepModal extends BaseModal {
+    constructor() {
+        const innerHTML = `
+        <div class="info-modal-content">
+            <div class="info-modal-header">
+                <h3 class="info-modal-title" id="second-step-modal-title"></h3>
+                <button class="info-modal-close"><i class="fas fa-times"></i></button>
+            </div>
+            <div class="info-modal-body">
+                <div class="info-icon" style="color: var(--primary);"><i class="fas fa-arrow-right"></i></div>
+                <p id="second-step-modal-message"></p>
+                <div class="action-buttons">
+                    <button class="primary-btn" id="second-step-confirm-btn"></button>
+                    <button class="secondary-btn" id="second-step-cancel-btn">لاحقًا</button>
+                </div>
+            </div>
+        </div>`;
+        super('second-math-step-modal', innerHTML);
+        this.titleEl = this.modal.querySelector('#second-step-modal-title');
+        this.messageEl = this.modal.querySelector('#second-step-modal-message');
+        this.confirmBtn = this.modal.querySelector('#second-step-confirm-btn');
+        this.cancelBtn = this.modal.querySelector('#second-step-cancel-btn');
+    }
+
+    show({ onConfirm, onCancel, firstMaterialName, secondMaterialName }) {
+        this.titleEl.textContent = `تم التسجيل في مادة ${firstMaterialName} بنجاح!`;
+        this.messageEl.textContent = `لاستكمال تسجيل مواد الرياضيات، يجب التسجيل في مادة ${secondMaterialName} الآن.`;
+        this.confirmBtn.innerHTML = `<i class="fas fa-arrow-left"></i> تسجيل في ${secondMaterialName} الآن`;
+        
+        // Use .cloneNode to remove old event listeners before adding new ones
+        const newConfirmBtn = this.confirmBtn.cloneNode(true);
+        this.confirmBtn.parentNode.replaceChild(newConfirmBtn, this.confirmBtn);
+        this.confirmBtn = newConfirmBtn;
+        
+        const newCancelBtn = this.cancelBtn.cloneNode(true);
+        this.cancelBtn.parentNode.replaceChild(newCancelBtn, this.cancelBtn);
+        this.cancelBtn = newCancelBtn;
+
+        this.confirmBtn.addEventListener('click', () => {
+            onConfirm();
+            this.hide();
+        });
+
+        this.cancelBtn.addEventListener('click', () => {
+            if (onCancel) onCancel();
+            this.hide();
+        });
+        
+        // The main close button should also trigger the onCancel callback
+        this.modal.querySelector('.info-modal-close').onclick = () => {
+            if (onCancel) onCancel();
+            this.hide();
+        };
+
+        super.show();
+    }
+}

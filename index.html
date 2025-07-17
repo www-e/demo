@@ -88,6 +88,20 @@
                 </select>
                 <div class="validation-message"></div>
             </div>
+                        <!-- ADD THIS NEW BLOCK for payment instructions -->
+            <div class="payment-instruction-box">
+                <div class="payment-instruction-header">
+                    <i class="fas fa-wallet"></i>
+                    <span>تعليمات الدفع</span>
+                </div>
+                <p>برجاء تحويل مصاريف الحجز على الرقم التالي انستا باي:</p>
+                <div class="phone-number-container">
+                    <span id="payment-phone-number" class="payment-phone-number">01090861907</span>
+                    <button type="button" id="copy-phone-btn" class="copy-btn" title="نسخ الرقم">
+                        <i class="fas fa-copy"></i>
+                    </button>
+                </div>
+            </div>
             <div class="form-group">
                 <label for="transactionId">رقم معاملة دفع فودافون كاش (Transaction ID)</label>
                 <input type="text" id="transactionId" name="transaction_id" required>

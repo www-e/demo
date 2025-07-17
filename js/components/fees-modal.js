@@ -10,6 +10,8 @@ export class FeesModal {
         this.setupScrollIndicator();
     }
 
+// REPLACE THE ENTIRE createModal FUNCTION WITH THIS
+
     createModal() {
         const modalHTML = `
         <div class="fees-modal-overlay" id="fees-modal-overlay">
@@ -98,6 +100,16 @@ export class FeesModal {
                             <span class="fee-price-total">115 جنيه</span>
                         </div>
                     </div>
+
+                    <!-- CORRECTED PLACEMENT: This block is now INSIDE the fees-modal-body -->
+                    <div class="fee-note" style="margin-top: var(--space-lg); background-color: var(--info-bg); color: var(--info-color); border: 1px solid var(--info-color);">
+                        <i class="fas fa-wallet"></i>
+                        <span>
+                            <strong>للدفع:</strong> يتم تحويل المبلغ على رقم انستا باي التالي: 
+                            <strong style="direction: ltr; display: inline-block;">01090861907</strong>
+                        </span>
+                    </div>
+
                 </div>
                 <div class="scroll-indicator" id="fees-modal-scroll-indicator">
                     <i class="fas fa-chevron-down"></i>
@@ -115,7 +127,6 @@ export class FeesModal {
             }
         });
     }
-
     show() {
         if (this.modalElement) {
             this.modalElement.classList.add('active');
@@ -142,37 +153,37 @@ export class FeesModal {
         }
     }
     setupScrollIndicator() {
-    const modalBody = this.modalElement.querySelector('.fees-modal-body');
-    const scrollIndicator = this.modalElement.querySelector('#fees-modal-scroll-indicator');
+        const modalBody = this.modalElement.querySelector('.fees-modal-body');
+        const scrollIndicator = this.modalElement.querySelector('#fees-modal-scroll-indicator');
 
-    if (!modalBody || !scrollIndicator) return;
+        if (!modalBody || !scrollIndicator) return;
 
-    const checkScroll = () => {
-        // isContentScrollable: checks if the content height is greater than the visible area
-        const isContentScrollable = modalBody.scrollHeight > modalBody.clientHeight;
-        // isScrolledToBottom: checks if the user has scrolled to the end (with a 5px buffer)
-        const isScrolledToBottom = modalBody.scrollHeight - modalBody.scrollTop <= modalBody.clientHeight + 5;
+        const checkScroll = () => {
+            // isContentScrollable: checks if the content height is greater than the visible area
+            const isContentScrollable = modalBody.scrollHeight > modalBody.clientHeight;
+            // isScrolledToBottom: checks if the user has scrolled to the end (with a 5px buffer)
+            const isScrolledToBottom = modalBody.scrollHeight - modalBody.scrollTop <= modalBody.clientHeight + 5;
 
-        if (isContentScrollable && !isScrolledToBottom) {
-            scrollIndicator.classList.add('visible');
-        } else {
-            scrollIndicator.classList.remove('visible');
-        }
-    };
-
-    // Check scroll on modal open
-    const observer = new MutationObserver((mutations) => {
-        for (let mutation of mutations) {
-            if (mutation.attributeName === 'class' && this.modalElement.classList.contains('active')) {
-                // Use a timeout to ensure content is fully rendered before checking scroll height
-                setTimeout(checkScroll, 100);
+            if (isContentScrollable && !isScrolledToBottom) {
+                scrollIndicator.classList.add('visible');
+            } else {
+                scrollIndicator.classList.remove('visible');
             }
-        }
-    });
-    
-    observer.observe(this.modalElement, { attributes: true });
+        };
 
-    // Check scroll while the user is scrolling inside the modal
-    modalBody.addEventListener('scroll', checkScroll);
-}
+        // Check scroll on modal open
+        const observer = new MutationObserver((mutations) => {
+            for (let mutation of mutations) {
+                if (mutation.attributeName === 'class' && this.modalElement.classList.contains('active')) {
+                    // Use a timeout to ensure content is fully rendered before checking scroll height
+                    setTimeout(checkScroll, 100);
+                }
+            }
+        });
+
+        observer.observe(this.modalElement, { attributes: true });
+
+        // Check scroll while the user is scrolling inside the modal
+        modalBody.addEventListener('scroll', checkScroll);
+    }
 }
