@@ -51,10 +51,20 @@ export function createTableHandler(elements, onEdit, onDelete) {
             const materialName = s.material?.name || 'عامة';
             const centerName = s.center?.name || 'عام';
 
-            const desktopRowHTML = `<tr class="${colorClass}"><td class="text-center">${index + 1}</td><td>${centerName}</td><td><span class="badge ${colorClass}">${translateGrade(s.grade)}</span></td><td>${groupTimeHTML}</td><td>${teacherName}</td><td>${materialName}</td><td>${new Date(s.created_at).toLocaleDateString('ar-EG')}</td><td><div class="action-buttons">${actionButtonsHTML}</div></td></tr>`;
+                        // Add a new cell for the schedule ID with a copy button
+            const scheduleIdHTML = `
+                <td class="schedule-id-cell">
+                    <span class="id-text">${s.id.substring(0, 8)}...</span>
+                    <button class="btn-action-copy" data-id="${s.id}" title="نسخ الـ ID الكامل">
+                        <i class="far fa-copy"></i>
+                    </button>
+                </td>
+            `;
+
+            const desktopRowHTML = `<tr class="${colorClass}"><td class="text-center">${index + 1}</td>${scheduleIdHTML}<td>${centerName}</td><td><span class="badge ${colorClass}">${translateGrade(s.grade)}</span></td><td>${groupTimeHTML}</td><td>${teacherName}</td><td>${materialName}</td><td>${new Date(s.created_at).toLocaleDateString('ar-EG')}</td><td><div class="action-buttons">${actionButtonsHTML}</div></td></tr>`;
             elements.tableBody.insertAdjacentHTML('beforeend', desktopRowHTML);
 
-            const mobileCardHTML = `<div class="mobile-card ${colorClass}"><div class="card-header"><span class="group-name">${s.group_name} - ${convertTo12HourArabic(s.time_slot)}</span><span class="badge ${colorClass}">${translateGrade(s.grade)}</span></div><div class="card-body-grid"><div class="card-row"><span class="card-label">المركز:</span><span class="card-value">${centerName}</span></div><div class="card-row"><span class="card-label">المدرس:</span><span class="card-value">${teacherName}</span></div><div class="card-row"><span class="card-label">المادة:</span><span class="card-value">${materialName}</span></div></div><div class="card-footer action-buttons">${actionButtonsHTML}</div></div>`;
+            const mobileCardHTML = `<div class="mobile-card ${colorClass}"><div class="card-header"><span class="group-name">${s.group_name} - ${convertTo12HourArabic(s.time_slot)}</span><span class="badge ${colorClass}">${translateGrade(s.grade)}</span></div><div class="card-body-grid"><div class="card-row"><span class="card-label">ID الموعد:</span><span class="card-value" style="font-family: monospace; font-size: 0.8rem;">${s.id}</span></div><div class="card-row"><span class="card-label">المركز:</span><span class="card-value">${centerName}</span></div><div class="card-row"><span class="card-label">المدرس:</span><span class="card-value">${teacherName}</span></div><div class="card-row"><span class="card-label">المادة:</span><span class="card-value">${materialName}</span></div></div><div class="card-footer action-buttons">${actionButtonsHTML}</div></div>`;
             elements.mobileCardView.insertAdjacentHTML('beforeend', mobileCardHTML);
         });
     }
@@ -86,9 +96,20 @@ export function createTableHandler(elements, onEdit, onDelete) {
     
     elements.schedulesTableContainer.addEventListener('click', (e) => {
         const editBtn = e.target.closest('.edit');
+        if (editBtn) return onEdit(editBtn.dataset);
+
         const deleteBtn = e.target.closest('.delete');
-        if (editBtn) onEdit(editBtn.dataset);
-        if (deleteBtn) onDelete(deleteBtn.dataset.id);
+        if (deleteBtn) return onDelete(deleteBtn.dataset.id);
+
+        const copyBtn = e.target.closest('.btn-action-copy');
+        if (copyBtn) {
+            e.stopPropagation();
+            navigator.clipboard.writeText(copyBtn.dataset.id).then(() => {
+                const icon = copyBtn.querySelector('i');
+                icon.className = 'fas fa-check'; // Change to checkmark
+                setTimeout(() => { icon.className = 'far fa-copy'; }, 1500);
+            }).catch(err => console.error('Failed to copy ID: ', err));
+        }
     });
 
     // FIXED: Exporting the newly created function

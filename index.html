@@ -52,7 +52,13 @@
                 </select>
                 <div class="validation-message"></div>
             </div>
-
+            <div class="form-group">
+                <label for="teacher">المدرس</label>
+                <select id="teacher" name="teacher" required>
+                    <option value="">اختر المدرس</option>
+                </select>
+                <div class="validation-message"></div>
+            </div>
             <div class="form-group">
                 <label for="grade">الصف الدراسي</label>
                 <select id="grade" name="grade">
@@ -68,15 +74,6 @@
                 <label for="material">المادة الدراسية</label>
                 <select id="material" name="material" required>
                     <option value="">اختر المادة</option>
-                </select>
-                <div class="validation-message"></div>
-            </div>
-
-            <!-- ADDED: Teacher selection dropdown -->
-            <div class="form-group">
-                <label for="teacher">المدرس</label>
-                <select id="teacher" name="teacher" required>
-                    <option value="">اختر المدرس</option>
                 </select>
                 <div class="validation-message"></div>
             </div>
@@ -127,6 +124,19 @@
             });
         }
     </script>
+        <!-- ADD THIS NEW FOOTER BLOCK -->
+    <footer class="app-footer">
+        <div class="container">
+            <span>© 2025 تسجيل طلاب سنتر ملوكي . جميع الحقوق محفوظة.</span>
+            <span class="developer-credit">
+                تصميم وتطوير 
+                <a href="https://wa.me/201154688628" target="_blank" class="developer-link">
+                    <i class="fas fa-code"></i> 
+                    <span>Omar Ashraf</span>
+                </a>
+            </span>
+        </div>
+    </footer>
 </body>
 
 </html>

@@ -93,6 +93,9 @@ export class MathWarningModal extends BaseModal {
     }
 }
 // NEW: A brand new, detailed success modal with pricing.
+
+// REPLACE THE ENTIRE SuccessModal CLASS WITH THIS NEW VERSION
+
 export class SuccessModal extends BaseModal {
     constructor() {
         const innerHTML = `
@@ -102,52 +105,75 @@ export class SuccessModal extends BaseModal {
                 <div class="info-icon"><i class="fas fa-check-circle" style="color: var(--success);"></i></div>
                 <h3 class="info-modal-title" style="color: var(--text-primary);">تم التسجيل بنجاح!</h3>
                 <p class="text-secondary mb-4">تم تسجيل بياناتك. يرجى مراجعة التفاصيل.</p>
-
-                <!-- Receipt Details -->
-                <div class="receipt-info-group">
-                    <div class="receipt-data-row">
-                        <span class="receipt-label"><i class="fas fa-user"></i> اسم الطالب</span>
-                        <span class="receipt-value" id="receipt-studentName"></span>
-                    </div>
-                     <div class="receipt-data-row">
-                        <span class="receipt-label"><i class="fas fa-mobile-alt"></i> رقم الطالب</span>
-                        <span class="receipt-value" id="receipt-studentPhone" style="direction: ltr;"></span>
-                    </div>
-                    <div class="receipt-data-row">
-                        <span class="receipt-label"><i class="fas fa-user-shield"></i> رقم ولي الأمر</span>
-                        <span class="receipt-value" id="receipt-parentPhone" style="direction: ltr;"></span>
-                    </div>
-                    <div class="receipt-data-row">
-                        <span class="receipt-label"><i class="fas fa-graduation-cap"></i> الصف والمادة</span>
-                        <span class="receipt-value" id="receipt-gradeMaterial"></span>
-                    </div>
-                    <div class="receipt-data-row">
-                        <span class="receipt-label"><i class="fas fa-building"></i> المركز</span>
-                        <span class="receipt-value" id="receipt-centerName"></span>
-                    </div>
-                    <div class="receipt-data-row">
-                        <span class="receipt-label"><i class="fas fa-users"></i> المجموعة</span>
-                        <span class="receipt-value" id="receipt-groupTime"></span>
-                    </div>
-                    <div class="receipt-data-row">
-                        <span class="receipt-label"><i class="fas fa-hashtag"></i> رقم المعاملة</span>
-                        <span class="receipt-value" id="receipt-transactionId" style="direction: ltr;"></span>
-                    </div>
+                <div class="receipt-info-group" id="receipt-details-container">
+                    <!-- Details will be injected here by the show() method -->
                 </div>
             </div>
         </div>`;
         super('success-modal', innerHTML);
+        this.detailsContainer = this.modal.querySelector('#receipt-details-container');
     }
 
     show(data) {
-        // Populate data
-        document.getElementById('receipt-studentName').textContent = data.studentName;
-        document.getElementById('receipt-studentPhone').textContent = data.studentPhone;
-        document.getElementById('receipt-parentPhone').textContent = data.parentPhone;
-        document.getElementById('receipt-gradeMaterial').textContent = `${data.gradeName} - ${data.materialName}`;
-        document.getElementById('receipt-centerName').textContent = data.centerName;
-        document.getElementById('receipt-groupTime').textContent = `${data.groupName} - ${data.timeName}`;
-        document.getElementById('receipt-transactionId').textContent = data.transactionId;
+        // Clear previous content
+        this.detailsContainer.innerHTML = '';
+
+        // --- NEW LOGIC: Check if we have a detailed summary to display ---
+        if (data.summary && Array.isArray(data.summary)) {
+            // Build the multi-item summary view
+            this.detailsContainer.innerHTML += `
+                <div class="receipt-data-row">
+                    <span class="receipt-label"><i class="fas fa-user"></i> اسم الطالب</span>
+                    <span class="receipt-value">${data.studentName}</span>
+                </div>
+                <div class="receipt-data-row">
+                    <span class="receipt-label"><i class="fas fa-mobile-alt"></i> رقم الطالب</span>
+                    <span class="receipt-value" style="direction: ltr;">${data.studentPhone}</span>
+                </div>
+            `;
+            
+            data.summary.forEach(item => {
+                this.detailsContainer.innerHTML += `
+                <div class="receipt-data-row" style="background: rgba(var(--primary-rgb), 0.02); padding: 8px; border-radius: 8px; margin-top: 8px;">
+                    <span class="receipt-label"><i class="fas fa-book-open"></i> ${item.materialName}</span>
+                    <span class="receipt-value">${item.groupName} - ${item.timeName}</span>
+                </div>
+                `;
+            });
+
+        } else {
+            // --- FALLBACK: Original logic for single registration display ---
+            this.detailsContainer.innerHTML = `
+                <div class="receipt-data-row">
+                    <span class="receipt-label"><i class="fas fa-user"></i> اسم الطالب</span>
+                    <span class="receipt-value">${data.studentName}</span>
+                </div>
+                 <div class="receipt-data-row">
+                    <span class="receipt-label"><i class="fas fa-mobile-alt"></i> رقم الطالب</span>
+                    <span class="receipt-value" style="direction: ltr;">${data.studentPhone}</span>
+                </div>
+                <div class="receipt-data-row">
+                    <span class="receipt-label"><i class="fas fa-user-shield"></i> رقم ولي الأمر</span>
+                    <span class="receipt-value" style="direction: ltr;">${data.parentPhone}</span>
+                </div>
+                <div class="receipt-data-row">
+                    <span class="receipt-label"><i class="fas fa-graduation-cap"></i> الصف والمادة</span>
+                    <span class="receipt-value">${data.gradeName} - ${data.materialName}</span>
+                </div>
+                <div class="receipt-data-row">
+                    <span class="receipt-label"><i class="fas fa-building"></i> المركز</span>
+                    <span class="receipt-value">${data.centerName}</span>
+                </div>
+                <div class="receipt-data-row">
+                    <span class="receipt-label"><i class="fas fa-users"></i> المجموعة</span>
+                    <span class="receipt-value">${data.groupName} - ${data.timeName}</span>
+                </div>
+                <div class="receipt-data-row">
+                    <span class="receipt-label"><i class="fas fa-hashtag"></i> رقم المعاملة</span>
+                    <span class="receipt-value" style="direction: ltr;">${data.transactionId}</span>
+                </div>
+            `;
+        }
         
         super.show();
     }

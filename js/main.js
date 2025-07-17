@@ -134,7 +134,7 @@ document.addEventListener('DOMContentLoaded', async () => {
 
     initDropdowns();
     initRealtimeValidation(form);
-        // --- NEW: Copy Button Functionality ---
+    // --- NEW: Copy Button Functionality ---
     const copyPhoneBtn = document.getElementById('copy-phone-btn');
     const paymentPhoneNumber = document.getElementById('payment-phone-number');
     if (copyPhoneBtn && paymentPhoneNumber) {
@@ -142,11 +142,11 @@ document.addEventListener('DOMContentLoaded', async () => {
             navigator.clipboard.writeText(paymentPhoneNumber.textContent).then(() => {
                 const icon = copyPhoneBtn.querySelector('i');
                 const originalIconClass = icon.className;
-                
+
                 // Visual feedback
                 icon.className = 'fas fa-check';
                 copyPhoneBtn.classList.add('copied');
-                
+
                 // Revert after a short time
                 setTimeout(() => {
                     icon.className = originalIconClass;
@@ -178,28 +178,49 @@ document.addEventListener('DOMContentLoaded', async () => {
      * It solves the filtering bug by populating Grade/Material/Teacher dropdowns from a common
      * "schedulesForCenter" list, and only applies the strict filtering for the final Group/Time list.
      */
+    // REPLACE THIS ENTIRE FUNCTION
     function updateAvailableOptions() {
+        // Step 1: Create a base list of schedules filtered ONLY by the selected Center.
         const selectedCenter = ui.centerSelect.value;
-        const schedulesForCenter = selectedCenter ? allSchedules.filter(s => s.center_id === selectedCenter) : allSchedules;
+        const schedulesForCenter = selectedCenter
+            ? allSchedules.filter(s => s.center_id === selectedCenter)
+            : allSchedules;
 
+        // Step 2: Populate Grade, Material, and Teacher dropdowns.
         const gradeOptions = [...new Set(schedulesForCenter.map(s => s.grade))].map(g => ({ value: g, text: GRADE_NAMES[g] }));
         updateSelectOptions(ui.gradeSelect, gradeOptions, 'اختر الصف');
 
-        const materialOptions = [...new Map(schedulesForCenter.map(s => [s.material.id, s.material])).values()].map(m => ({ value: m.id, text: m.name }));
+        // --- NEW LOGIC: Smarter material filtering ---
+        const pendingRegistrationJSON = sessionStorage.getItem(PENDING_MATH_REGISTRATION_KEY);
+        let firstMaterialId = null;
+        if (pendingRegistrationJSON) {
+            try {
+                firstMaterialId = JSON.parse(pendingRegistrationJSON).firstMaterialId;
+            } catch (e) { console.error(e); }
+        }
+
+        // Get all unique materials for the center...
+        const materialOptions = [...new Map(schedulesForCenter.map(s => [s.material.id, s.material])).values()]
+            // ...but filter out the one that was already registered if we're in the second step.
+            .filter(m => m.id !== firstMaterialId)
+            .map(m => ({ value: m.id, text: m.name }));
         updateSelectOptions(ui.materialSelect, materialOptions, 'اختر المادة');
-        
+
         const teacherOptions = [...new Map(schedulesForCenter.map(s => [s.teacher.id, s.teacher])).values()].filter(t => t.is_active).map(t => ({ value: t.id, text: t.name }));
         updateSelectOptions(ui.teacherSelect, teacherOptions, 'اختر المدرس');
 
+        // Step 3: Get current selections.
         const selectedGrade = ui.gradeSelect.value;
         const selectedMaterial = ui.materialSelect.value;
         const selectedTeacher = ui.teacherSelect.value;
 
+        // Step 4: Create the FINAL, strictly filtered list.
         let finalSchedules = schedulesForCenter;
         if (selectedGrade) finalSchedules = finalSchedules.filter(s => s.grade === selectedGrade);
         if (selectedMaterial) finalSchedules = finalSchedules.filter(s => s.material_id === selectedMaterial);
         if (selectedTeacher) finalSchedules = finalSchedules.filter(s => s.teacher_id === selectedTeacher);
 
+        // Step 5: Populate the final Group/Time options.
         const groupTimeOptions = finalSchedules.map(s => {
             const registeredCount = s.registrations_2025_2026_count || 0, capacity = s.capacity || 145;
             let badgeText = 'متاح', badgeClass = 'tag-available';
@@ -230,10 +251,13 @@ document.addEventListener('DOMContentLoaded', async () => {
     });
 
     // Main form submission logic.
+    // REPLACE THIS ENTIRE EVENT LISTENER
     form.addEventListener('submit', async (e) => {
         e.preventDefault();
         const formData = new FormData(form);
-        if (!validateForm(form) || !formData.get('group_time')) return;
+        if (!validateForm(form) || !formData.get('group_time')) {
+            return;
+        }
 
         ui.submitBtn.disabled = true;
         ui.submitBtn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> جاري التسجيل...';
@@ -260,11 +284,25 @@ document.addEventListener('DOMContentLoaded', async () => {
                 const selectedMaterial = allMaterials.find(m => m.id === materialId);
                 const materialName = selectedMaterial ? selectedMaterial.name : '';
                 const isMathRegistration = (grade === 'second' || grade === 'third') && (materialName.includes('بحتة') || materialName.includes('تطبيقية'));
-                
-                if (isMathRegistration && !sessionStorage.getItem(PENDING_MATH_REGISTRATION_KEY)) {
+
+                const pendingRegistrationJSON = sessionStorage.getItem(PENDING_MATH_REGISTRATION_KEY);
+
+                if (isMathRegistration && !pendingRegistrationJSON) {
                     // PATH 1: First math registration. Start the two-step process.
-                    const pendingData = { student_name: registrationData.p_student_name, student_phone: registrationData.p_student_phone, parent_phone: registrationData.p_parent_phone };
+                    const pendingData = {
+                        student_name: registrationData.p_student_name,
+                        student_phone: registrationData.p_student_phone,
+                        parent_phone: registrationData.p_parent_phone,
+                        // --- NEW: Store details of the FIRST registration ---
+                        firstMaterialId: materialId,
+                        firstRegistrationDetails: {
+                            materialName: materialName,
+                            groupName: days_group,
+                            timeName: convertTo12HourFormat(time_slot)
+                        }
+                    };
                     sessionStorage.setItem(PENDING_MATH_REGISTRATION_KEY, JSON.stringify(pendingData));
+
                     modals.secondMathStep.show({
                         onConfirm: () => { prefillAndLockForm(pendingData, form); updateAvailableOptions(); },
                         onCancel: () => { prefillAndLockForm(pendingData, form); updateAvailableOptions(); },
@@ -272,13 +310,35 @@ document.addEventListener('DOMContentLoaded', async () => {
                         secondMaterialName: materialName.includes('بحتة') ? 'تطبيقية' : 'بحتة'
                     });
                 } else {
-                    // PATH 2: Normal registration or second math registration. Show final success receipt.
-                    const selectedCenter = allCenters.find(c => c.id === registrationData.p_center_id);
-                    modals.success.show({
-                        studentName: registrationData.p_student_name, studentPhone: registrationData.p_student_phone, parentPhone: registrationData.p_parent_phone,
-                        gradeName: GRADE_NAMES[grade], materialName: materialName, centerName: selectedCenter ? selectedCenter.name : 'غير محدد',
-                        groupName: days_group, timeName: convertTo12HourFormat(time_slot), transactionId: registrationData.p_transaction_id
-                    });
+                    // PATH 2: Normal registration or SECOND math registration.
+                    let successData = {};
+
+                    if (isMathRegistration && pendingRegistrationJSON) {
+                        // This is the SECOND registration, build the summary.
+                        const firstRegData = JSON.parse(pendingRegistrationJSON);
+                        successData = {
+                            studentName: registrationData.p_student_name,
+                            studentPhone: registrationData.p_student_phone,
+                            summary: [
+                                firstRegData.firstRegistrationDetails, // The first registration
+                                { // The second (current) registration
+                                    materialName: materialName,
+                                    groupName: days_group,
+                                    timeName: convertTo12HourFormat(time_slot)
+                                }
+                            ]
+                        };
+                    } else {
+                        // This is a normal (non-math) registration.
+                        const selectedCenter = allCenters.find(c => c.id === registrationData.p_center_id);
+                        successData = {
+                            studentName: registrationData.p_student_name, studentPhone: registrationData.p_student_phone, parentPhone: registrationData.p_parent_phone,
+                            gradeName: GRADE_NAMES[grade], materialName: materialName, centerName: selectedCenter ? selectedCenter.name : 'غير محدد',
+                            groupName: days_group, timeName: convertTo12HourFormat(time_slot), transactionId: registrationData.p_transaction_id
+                        };
+                    }
+
+                    modals.success.show(successData);
                     resetAndUnlockForm(form);
                     updateAvailableOptions();
                 }

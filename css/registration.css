@@ -339,3 +339,58 @@ input[readonly] {
 .copy-btn.copied {
     background-color: var(--success);
 }
+/* ADD THESE NEW RULES AT THE END OF THE FILE */
+
+.app-footer {
+    background-color: #1a1a2e; /* Dark, modern color */
+    color: #a9a9d8;
+    padding: 1.5rem 1rem;
+    border-top: 3px solid var(--primary);
+    font-size: 0.9rem;
+    margin-top: auto; /* Pushes footer to bottom in flex layout */
+}
+.app-footer .container {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    flex-wrap: wrap;
+    gap: 1rem;
+    max-width: 800px;
+    margin: 0 auto;
+}
+.developer-credit {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+}
+.developer-link {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.5rem;
+    background-color: rgba(255, 255, 255, 0.1);
+    color: white;
+    padding: 0.4rem 0.8rem;
+    border-radius: var(--radius-full);
+    text-decoration: none;
+    font-weight: 500;
+    transition: all 0.3s ease;
+}
+.developer-link i {
+    color: var(--accent);
+    transition: transform 0.3s ease;
+}
+.developer-link:hover {
+    background-color: var(--primary);
+    transform: translateY(-2px);
+    box-shadow: 0 4px 10px rgba(0,0,0,0.2);
+}
+.developer-link:hover i {
+    transform: rotate(12deg);
+}
+
+@media (max-width: 767px) {
+    .app-footer .container {
+        flex-direction: column;
+        text-align: center;
+    }
+}
