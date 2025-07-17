@@ -1,6 +1,6 @@
 // A version number for our cache. Change this version number
 // anytime you update any of the cached files to force the service worker to update.
-const CACHE_VERSION = 12 ;
+const CACHE_VERSION = 13 ;
 const CACHE_NAME = `edu-center-cache-v${CACHE_VERSION}`;
 
 // A list of all the essential files (the "app shell") that we want to cache.
